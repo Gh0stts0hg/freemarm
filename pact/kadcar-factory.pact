@@ -1,4 +1,4 @@
-(namespace (read-msg 'ns))
+(namespace 'free)
 
 (module kadcar-factory GOVERNANCE
 
@@ -55,7 +55,7 @@
 ;;;;;;;;;;;;;; Capabilities ;;;;;;;;;;;;;;
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin)))
+    (enforce-guard (keyset-ref-guard 'kc-admin)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;; MARM WRAPPERS ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,8 +74,8 @@
         (vin:string (at 'vin vehicleSpec))
         (token-id (get-kadcar-token-id vin make model))
       )
-      (marmalade.ledger.create-token token-id 1
-      (get-k2-manifest vin-number) marmalade.fixed-quote-royalty-policy)
+      (marmalade.peoples-ledger.create-token token-id 1
+      (get-k2-manifest vin-number) marmalade.kadcar-policy)
       (format "created token {}" [token-id])
     )
 
@@ -83,7 +83,7 @@
 
 
   (defun mint-k2 (token-id:string account:string account-guard:guard)
-    (marmalade.ledger.mint token-id account account-guard 1.0)
+    (marmalade.peoples-ledger.mint token-id account account-guard 1.0)
   )
 
 

@@ -1,11 +1,11 @@
-(namespace (read-msg 'ns))
+(namespace "free")
 ;;
 ;; Collection organization to come in V2, for now just use policy if you need
 ;;
 ;; Minimal changes to ledger to support compat. from KC and friends
 ;;
 ;;
-(module ledger GOVERNANCE
+(module peoples-ledger GOVERNANCE
 
   @model
     [
@@ -68,7 +68,7 @@
   ;;
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin)))
+    (enforce-guard (keyset-ref-guard 'kc-admin)))
 
   ;;
   ;; poly-fungible-v2 caps
