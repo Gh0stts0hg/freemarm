@@ -1,4 +1,4 @@
-(namespace (read-msg 'ns))
+(namespace "free")
 ;;
 ;; Collection organization to come in V2, for now just use policy if you need
 ;;

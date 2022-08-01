@@ -1,11 +1,11 @@
 (namespace (read-msg 'ns))
 
-(module fixed-quote-royalty-policy GOVERNANCE
+(module kadcar-policy GOVERNANCE
 
   @doc "Policy for fixed issuance with royalty and quoted sale in specified fungible."
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin )))
+    (enforce-guard (keyset-ref-guard 'kc-admin )))
 
   (implements kip.token-policy-v1)
   (use kip.token-policy-v1 [token-info])
