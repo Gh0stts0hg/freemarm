@@ -1,4 +1,4 @@
-(namespace (read-msg 'ns))
+(namespace "free")
 
 (module kadcar-policy GOVERNANCE
 
@@ -90,7 +90,7 @@
 
 
   (defun enforce-ledger:bool ()
-     (enforce-guard (marmalade.ledger.ledger-guard))
+     (enforce-guard (marmalade.peoples-ledger.ledger-guard))
    )
 
   (defun enforce-mint:bool
