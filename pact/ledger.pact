@@ -1,6 +1,7 @@
 (namespace (read-msg 'ns))
 ;;
-;; Collection organization to come in V2, for now just use policy if you need
+;; Create floating tokens as you would with marm (Except ID prefix added by ledger)
+;; Or create tokens as part of explicit collection (1/1nfts only) to facilitate easier creation and managing of collections
 ;;
 ;; Minimal changes to ledger to support compat. from KC and friends
 ;;
@@ -25,6 +26,9 @@
 
   (deftable ledger:{account-details})
 
+
+
+;; indexed by effective id : {collection.tokenid}
   (defschema token-schema
     id:string
     manifest:object{manifest}
@@ -39,14 +43,16 @@
   ;; mechanism and for projects to reserve a token 'namespace' for their collections
   ;; you can totaly achieve this through policies too btw.
   (defschema nft-collectioned-token-schema
-    id:string
-    ;; id and name duplicated for now, will be used down the line.
-    collection-name:string
+    ;;collection-name essentially, for simplicity that will be unique id case insensitive as TODO
+    collection-id:string
     ;; this is effectively collection floating supply
     ;; assuming you can burn to stay below this if your POLICY
     ;; impl allows for it.
     max-unique-token-supply:integer
     current-unique-token-supply:integer
+
+    ;;list of created but not minted tokens under collection.
+    available-token-ids:list
     collection-guard:guard
     ;; this should be changed and decoupled from token POLICY
     ;; there is actualy alot of good room to improve here but
@@ -209,6 +215,25 @@
         } } )
   )
 
+  (defun get-collection-info:object{nft-collectioned-token-schema} (id:string)
+    (with-read collections id
+      { 'collection-wide-policy := collection-wide-policy
+      , 'collection-id := collection-id
+      , 'max-unique-token-supply := max-supply
+      , 'current-unique-token-supply:= curr-supply
+      , 'available-token-ids:=available-tokens
+      , 'collection-guard:=collection-guard
+      }
+        { 'collection-wide-policy : collection-wide-policy
+        , 'collection-id : collection-id
+        , 'max-unique-token-supply : max-supply
+        , 'current-unique-token-supply: curr-supply
+        , 'available-token-ids:available-tokens
+        , 'collection-guard:collection-guard
+        } )
+  )
+
+
   (defun create-account:bool
     ( id:string
       account:string
@@ -225,6 +250,37 @@
     (emit-event (ACCOUNT_GUARD id account guard))
   )
 
+  (defun create-collection:bool
+    (
+      collection-id:string
+      collection-guard:guard
+      max-unique-supply:integer
+      collection-policy:module{kip.token-policy-v1}
+
+    )
+    (enforce-valid-collection collection-id)
+    (insert collections collection-id
+      { "collection-id" : collection-id
+      , "max-unique-token-supply"   : max-unique-supply
+      , "current-unique-token-supply" : 0
+      , "available-token-ids" : []
+      , "collection-guard": collection-guard
+      , "collection-wide-policy": collection-policy
+      })
+      (format "collection created for {}" [collection-id])
+    ;(emit-event (COLLECTION_CREATED id account guard))
+  )
+
+
+  (defun enforce-valid-collection (collection-id:string)
+
+    ;;(enforce (= false (row-exists 'collections collection-id "before")) "Collection already exists")
+    (enforce (!= collection-id "global") "Reserved collection-name for floating tokens")
+
+  )
+
+
+
   (defun total-supply:decimal (id:string)
     (with-default-read tokens id
       { 'supply : 0.0 }
@@ -238,24 +294,30 @@
       manifest:object{manifest}
       policy:module{kip.token-policy-v1}
     )
-    (enforce-verify-manifest manifest)
-    (policy::enforce-init
-      { 'id: id, 'supply: 0.0, 'precision: precision, 'manifest: manifest })
-    (insert tokens id {
-      "id": id,
-      "precision": precision,
-      "manifest": manifest,
-      "supply": 0.0,
-      "policy": policy
-      })
-      (emit-event (TOKEN id precision 0.0 policy))
+    (let*
+        (
+          (indexed-id (get-token-id-indexed-by-collection "global" id))
+        )
+        (enforce-verify-manifest manifest)
+        (policy::enforce-init
+          { 'id: indexed-id, 'supply: 0.0, 'precision: precision, 'manifest: manifest })
+        (insert tokens indexed-id {
+          "id": indexed-id,
+          "precision": precision,
+          "manifest": manifest,
+          "supply": 0.0,
+          "policy": policy
+          })
+          (emit-event (TOKEN indexed-id precision 0.0 policy))
+          indexed-id
+    )
+
   )
 
 
   (defun create-token-for-collection:bool
     ( collection-id:string
-      id:string
-      precision:integer
+      token-id:string
       manifest:object{manifest}
       policy:module{kip.token-policy-v1}
     )
@@ -264,34 +326,50 @@
     ;; enforce max unique SUPPLY
     (enforce-collection collection-id)
 
-    (bind (get-collection collection-id)
-      { 'collection-guard:=mint-guard:guard
-      , 'collection-name:=collection-name:string
-      , 'max-unique-token-supply:=max-amount:integer
-      , 'current-unique-token-supply:=curr-amount:integer
-      }
-
-      (policy::enforce-init
-        { 'id: id, 'supply: 0.0, 'precision: precision, 'manifest: manifest })
-      (insert tokens id {
-        "id": id,
-        "precision": precision,
-        "manifest": manifest,
-        "supply": 0.0,
-        "policy": policy
-        }
+    (let*
+      (
+        (indexed-id (get-token-id-indexed-by-collection collection-id token-id))
       )
-
-      (update collections collection-name {
-        "current-unique-token-supply": (+ curr-amount 1)
+      (bind (get-collection collection-id)
+        { 'collection-guard:=mint-guard:guard
+        , 'collection-id:=collection-id:string
+        , 'max-unique-token-supply:=max-amount:integer
+        , 'current-unique-token-supply:=curr-amount:integer
+        , 'available-token-ids:=available-token-list:list
         }
+
+        (policy::enforce-init
+          { 'id: indexed-id, 'supply: 0.0, 'precision: 0, 'manifest: manifest })
+        (insert tokens indexed-id {
+          "id": indexed-id,
+          "precision": 0,
+          "manifest": manifest,
+          "supply": 0.0,
+          "policy": policy
+          }
+        )
+
+;;;;;;;; NOTE: Here we actually should be updating unique supply, not at mint, because collections
+;;;;;;;;       assume that we are at 0 precision 1 supply creation is better place to increment.
+
+
+;;;;;;;; If we don't then we can create tokens to exceed max supply and have floating available tokens list
+;;;;;;;; not the end of the world but meh
+        (update collections collection-id {
+          "available-token-ids": (+ available-token-list [indexed-id])
+          }
+        )
       )
+      (emit-event (TOKEN indexed-id 0 0.0 policy))
+      (format "created token {} for collection {}" [indexed-id collection-id])
     )
-
-    (emit-event (TOKEN id precision 0.0 policy))
   )
 
-;also check exist explicit
+
+  (defun get-token-id-indexed-by-collection:string (collection-id:string original-token-id:string)
+    (format "{}.{}" [collection-id original-token-id])
+  )
+
   (defun enforce-collection
     (
       collection-id:string
@@ -400,6 +478,8 @@
       guard:guard
       amount:decimal
     )
+    ;;;;;;; CHECK If collection based because you should update collections
+
     (with-capability (MINT id account amount)
       (bind (get-policy-info id)
         { 'policy := policy:module{kip.token-policy-v1}
@@ -416,20 +496,114 @@
       ))
   )
 
+  (defun mint-token-from-collection:bool
+    ( collection-id:string
+      account:string
+      account-guard:guard
+      amount:integer
+    )
+      (bind (get-collection-info collection-id)
+        { 'available-token-ids := available-token-ids
+          ,'current-unique-token-supply := current-unique-token-supply
+        }
+
+        (let*
+          (
+            (token-id (get-token-id-from-collection-available-tokens collection-id))
+            (final-available (filter (!= token-id) available-token-ids))
+            (minted (mint token-id account account-guard 1.0 ))
+          )
+          (update collections collection-id {
+                          'available-token-ids: (filter (!= token-id) available-token-ids),
+                          'current-unique-token-supply: (+ current-unique-token-supply 1)
+          })
+
+
+          (format "mint result {} for token-id {}" [minted token-id])
+        )
+      )
+
+  )
+
+  (defun get-token-id-from-collection-available-tokens (collection-id:string)
+
+    (bind (get-collection-info collection-id)
+      { 'available-token-ids := available-token-ids
+      }
+      (let* (
+              (random:integer (get-rand))
+              (current-length:integer (length available-token-ids))
+              (index:integer (mod random current-length))
+              (token-id:string (at index available-token-ids))
+            )
+            token-id
+       )
+    )
+  )
+
+;; credit to babena folks
+  (defun get-rand:integer ()
+    (let* (
+      (prev-block-hash (at "prev-block-hash" (chain-data)))
+      (random (str-to-int 64 (hash (+ prev-block-hash (hash (at 'block-time (chain-data)))))))
+    )
+    random
+    )
+  )
 
   (defun upgrade-manifest:bool
-    ( id:string
+    ( token-id:string
+      account-id:string
+      collection-id:string
       new-manifest:object{manifest}
     )
-    ;;enforce and others
-    ;;(time-stamping-auth::broadcast-change token-id old-manifest new-manifest block-time)
-    (update tokens id
-      { "manifest" : new-manifest }
+    ;;enforce ownership & for now locked precision & supply nft
+    (with-read ledger (key token-id account-id)
+      { "balance" := old-bal
+      ,"account" := account
+      ,"guard" := account-guard }
+
+        (bind (get-policy-info token-id)
+          { 'policy := policy:module{kip.token-policy-v1}
+          , 'token := token
+          }
+
+          ;;;;;; for now lock to single supply 0 precision nfts
+          (enforce (= (at 'supply token) 1.0) "CANT UPGRADE THIS")
+          (enforce (= (at 'precision token) 0) "CANT UPGRADE THIS")
+          (enforce (= account account-id) "Lack of dom ownership over NFT")
+          (enforce (= old-bal 1.0) "Lack of dom ownership over NFT")
+          ;;;;;; enforce that nft owner signed tx
+          (enforce-guard account-guard)
+          (bind (get-collection-info collection-id)
+          { 'collection-wide-policy := collection-wide-policy
+          , 'collection-id := collection-id
+          , 'max-unique-token-supply := max-supply
+          , 'current-unique-token-supply:= curr-supply
+          , 'available-token-ids:=available-tokens
+          , 'collection-guard:=collection-guard
+          }
+          (enforce-guard collection-guard)
+
+          )
+        ;  (enforce-guard collection-guard)
+
+
+        )
+        (update tokens token-id
+          { "manifest" : new-manifest }
+        )
       )
-     (emit-event (MANIFEST_UPDATE id new-manifest))
+    ;;(time-stamping-auth::broadcast-change token-id old-manifest new-manifest block-time)
+
+     (emit-event (MANIFEST_UPDATE token-id new-manifest))
   )
 
 
+  (defun get-collection-from-id (token-id:string)
+
+    (format "todo" [])
+  )
 
   (defun burn:bool
     ( id:string
@@ -716,4 +890,5 @@
 (if (read-msg 'upgrade)
   ["upgrade complete"]
   [ (create-table ledger)
-    (create-table tokens) ])
+    (create-table tokens)
+    (create-table collections) ])

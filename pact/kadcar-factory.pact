@@ -64,7 +64,23 @@
 
 ;;vin:string make:string model:string
 
-  (defun create-k2 (vin-number:string)
+  (defun create-k2-token (vin-number:string)
+
+    (let*
+      (
+        (vehicleSpec:object{vehicle-information} (read-msg "vehicle_spec"))
+        (make:string (at 'make vehicleSpec))
+        (model:string (at 'model vehicleSpec))
+
+        (token-id (get-kadcar-token-id vin-number make model))
+      )
+
+      (format "candidate token-id {}" [token-id])
+    )
+
+  )
+
+  (defun create-k2 ()
 
     (let*
       (
@@ -73,21 +89,52 @@
         (model:string (at 'model vehicleSpec))
         (vin:string (at 'vin vehicleSpec))
         (token-id (get-kadcar-token-id vin make model))
+        (final-token-id (marmalade.ledger.create-token token-id 0
+        (get-k2-manifest vin) marmalade.fixed-quote-royalty-policy))
       )
-      (marmalade.ledger.create-token token-id 1
-      (get-k2-manifest vin-number) marmalade.fixed-quote-royalty-policy)
-      (format "created token {}" [token-id])
+
+      (format "created token {}" [final-token-id])
     )
 
   )
 
+  (defun build-k2-manifest:object{manifest} (vin:string)
+
+    (let*
+      (
+        (vehicleSpec:object{vehicle-information} (read-msg "vehicle_spec"))
+        (make:string (at 'make vehicleSpec))
+        (model:string (at 'model vehicleSpec))
+        (token-id (get-kadcar-token-id vin make model))
+        (final-manifest (get-k2-manifest vin))
+      )
+
+      final-manifest
+    )
+
+  )
+  (defun build-k2-manifest-token-id:string (vin:string)
+
+    (let*
+      (
+        (vehicleSpec:object{vehicle-information} (read-msg "vehicle_spec"))
+        (make:string (at 'make vehicleSpec))
+        (model:string (at 'model vehicleSpec))
+        (token-id (get-kadcar-token-id vin make model))
+        (final-manifest (get-k2-manifest vin))
+      )
+
+      token-id
+    )
+
+  )
 
   (defun mint-k2 (token-id:string account:string account-guard:guard)
     (marmalade.ledger.mint token-id account account-guard 1.0)
   )
 
 
-    ;;;;;;;;;;;;;; main entry to retrieve k1 manifest ;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;; main entry to retrieve k2 manifest ;;;;;;;;;;;;;;
 
   (defun get-k2-manifest(vin-number:string)
 

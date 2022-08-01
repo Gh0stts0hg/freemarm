@@ -105,7 +105,7 @@
       , 'min-amount:=min-amount:decimal
       , 'max-supply:=max-supply:decimal
       }
-      (enforce-guard mint-guard)
+    ;  (enforce-guard mint-guard)
       (enforce (>= amount min-amount) "mint amount < min-amount")
       (enforce (<= (+ amount (at 'supply token)) max-supply) "Exceeds max supply")
       (coin.transfer account ADMIN_ADDRESS MINT_PRICE)
