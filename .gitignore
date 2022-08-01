@@ -1,0 +1,6 @@
+node_modules/
+src/scratch-pad.js
+.vscode/
+.DS_Store
+*.code-workspace
+yarn-error.log
