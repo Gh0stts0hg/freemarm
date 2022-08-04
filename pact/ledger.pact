@@ -586,9 +586,6 @@
           (enforce-guard collection-guard)
 
           )
-        ;  (enforce-guard collection-guard)
-
-
         )
         (update tokens token-id
           { "manifest" : new-manifest }
