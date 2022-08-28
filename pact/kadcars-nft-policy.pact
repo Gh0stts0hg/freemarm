@@ -4,7 +4,7 @@
   @doc "Policy for fixed issuance with royalty and quoted sale in specified fungible."
 
 
-  (defconst ADMIN_ADDRESS "admin"
+  (defconst ADMIN_ADDRESS "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"
     @doc "admin address which also recieves mint payouts")
 
   (defconst ROYALTY_ADDRESS "royalty_dao"
