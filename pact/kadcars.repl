@@ -68,6 +68,8 @@
   ,'ns: "marmalade"
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5: {"keys": ["f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"], "pred": "keys-all"}
+
   ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
   , "bob": {"keys": ["bob"], "pred": "keys-all"}
   ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
@@ -106,12 +108,16 @@
        },
        { 'key: 'bob
         ,'caps:[]
-         }
+         },
+     { 'key: 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5
+      ,'caps:[]
+       }
    ])
 
 (use kip.token-manifest)
 (use free.universal-ledger)
 (coin.create-account "creator" (read-keyset 'creator-guard))
+(coin.create-account "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" (read-keyset 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5))
 
 (expect "Created collection"
   true
@@ -123,7 +129,7 @@
   (env-sigs
     [{'key:'mint
      ,'caps:
-      [(free.universal-ledger.MINT "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0), (coin.TRANSFER "bob" "admin" 1.1)
+      [(free.universal-ledger.MINT "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
        ]},
        { 'key: 'bob
         ,'caps:[]
@@ -140,7 +146,7 @@
 (expect "Create and mint fqp token EVENTS"
  [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 0 0.0 free.kadcars-nft-policy]}
  ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0]}
- ,{"name": "coin.TRANSFER","params": ["bob" "admin" 1.1]}
+ ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1]}
  ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard)]}
  ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
  ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0]}]
@@ -211,7 +217,7 @@
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0), (coin.TRANSFER "bob" "admin" 1.1)
+    [(free.universal-ledger.MINT "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
      ]},
      { 'key: 'bob
       ,'caps:[]
@@ -231,7 +237,7 @@
 (expect "Create and mint fqp token EVENTS"
    [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 0 0.0 free.kadcars-nft-policy]}
    ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0]}
-   ,{"name": "coin.TRANSFER","params": ["bob" "admin" 1.1]}
+   ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1]}
    ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"  (read-keyset 'bob-guard)]}
    ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
    ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0]}]
