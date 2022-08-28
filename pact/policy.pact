@@ -23,7 +23,7 @@
   )
 
   (defun enforce-ledger:bool ()
-    (enforce-guard (marmalade.ledger.ledger-guard))
+    (enforce-guard (free.universal-ledger.ledger-guard))
   )
 
   (defun enforce-mint:bool

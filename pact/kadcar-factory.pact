@@ -64,6 +64,24 @@
 
 ;;vin:string make:string model:string
 
+(defun create-k2 ()
+
+  (let*
+    (
+      (vehicleSpec:object{vehicle-information} (read-msg "vehicle_spec"))
+      (make:string (at 'make vehicleSpec))
+      (model:string (at 'model vehicleSpec))
+      (vin:string (at 'vin vehicleSpec))
+      (token-id (get-kadcar-token-id vin make model))
+      (final-token-id (free.universal-ledger.create-token token-id 0
+      (get-k2-manifest vin) free.kadcars-nft-policy))
+    )
+
+    (format "created token {}" [final-token-id])
+  )
+
+)
+
   (defun create-k2-token (vin-number:string)
 
     (let*
@@ -80,23 +98,7 @@
 
   )
 
-  (defun create-k2 ()
 
-    (let*
-      (
-        (vehicleSpec:object{vehicle-information} (read-msg "vehicle_spec"))
-        (make:string (at 'make vehicleSpec))
-        (model:string (at 'model vehicleSpec))
-        (vin:string (at 'vin vehicleSpec))
-        (token-id (get-kadcar-token-id vin make model))
-        (final-token-id (marmalade.ledger.create-token token-id 0
-        (get-k2-manifest vin) marmalade.fixed-quote-royalty-policy))
-      )
-
-      (format "created token {}" [final-token-id])
-    )
-
-  )
 
   (defun build-k2-manifest:object{manifest} (vin:string)
 
@@ -130,7 +132,7 @@
   )
 
   (defun mint-k2 (token-id:string account:string account-guard:guard)
-    (marmalade.ledger.mint token-id account account-guard 1.0)
+    (free.universal-ledger.mint token-id account account-guard 1.0)
   )
 
 

@@ -1,3 +1,4 @@
+
 (begin-tx)
 (env-data
   { 'ns-admin-keyset: []
@@ -31,10 +32,9 @@
     ,'caps: []
     }])
 (load "ns-marmalade.pact")
-(load "ledger.pact")
-(load "policy.pact")
-(load "fixed-quote-policy.pact")
-(load "fixed-quote-royalty-policy.pact")
+(load "change-ledger.pact")
+(load "universal-ledger.pact")
+(load "kadcars-nft-policy.pact")
 (load "kadcar-factory.pact")
 
 
@@ -78,21 +78,21 @@
     ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
     ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
     ,'royalty-rate: 0.03
-    ,'max-supply: 1.0
-    ,'min-amount: 0.0
     ,'owner: "creator"
-    , 'latest-spec: {}
+    ,'collection-id: "k:2"
   }
   ,'vehicle_spec: {
     'vin: "1"
     ,'make: "Kadcars"
     ,'model: "K2"
   }
+  ,'collection-unique-supply:1337
+  ,'collection-id:"k:2"
   })
 (env-sigs
   [{'key:'dummy
    ,'caps:
-    [(marmalade.ledger.MINT "K2#1" "bob" 1.0)
+    [(free.universal-ledger.MINT "K2#1" "bob" 1.0)
      ]},
    { 'key: 'marmalade-admin
     ,'caps:[]
@@ -100,23 +100,30 @@
    { 'key: 'bob
     ,'caps:[]
      }
+     ,
+     { 'key: 'creator
+      ,'caps:[]
+       },
+       { 'key: 'bob
+        ,'caps:[]
+         }
    ])
 
 (use kip.token-manifest)
-(use marmalade.ledger)
+(use free.universal-ledger)
 (coin.create-account "creator" (read-keyset 'creator-guard))
 
+(expect "Created collection"
+  true
+  (free.kadcars-nft-policy.create-collection))
 (expect "Create token K2#1"
-  "created token global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I"
+  "created token true"
   (marmalade.kadcar-factory.create-k2))
-
-;  (create-token "K2#1" 1
-;  (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) marmalade.fixed-quote-royalty-policy))
 
   (env-sigs
     [{'key:'mint
      ,'caps:
-      [(marmalade.ledger.MINT "global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0), (coin.TRANSFER "bob" "admin" 1.1)
+      [(free.universal-ledger.MINT "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0), (coin.TRANSFER "bob" "admin" 1.1)
        ]},
        { 'key: 'bob
         ,'caps:[]
@@ -124,19 +131,19 @@
 
 (expect "mint K2#1 to bob, success"
   true
-  (mint "global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard) 1.0))
+  (mint "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard) 1.0))
 
 (expect "Bob is credited"
   1.0
-  (get-balance "global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 'bob))
+  (get-balance "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 'bob))
 
 (expect "Create and mint fqp token EVENTS"
- [{"name": "marmalade.ledger.TOKEN","params": ["global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 0 0.0 marmalade.fixed-quote-royalty-policy]}
- ,{"name": "marmalade.ledger.MINT","params": ["global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0]}
+ [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 0 0.0 free.kadcars-nft-policy]}
+ ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0]}
  ,{"name": "coin.TRANSFER","params": ["bob" "admin" 1.1]}
- ,{"name": "marmalade.ledger.ACCOUNT_GUARD","params": ["global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard)]}
- ,{"name": "marmalade.ledger.RECONCILE","params": ["global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
- ,{"name": "marmalade.ledger.SUPPLY","params": ["global.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0]}]
+ ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard)]}
+ ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
+ ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0]}]
 (map (remove 'module-hash) (env-events true)))
 
 (commit-tx)
@@ -159,21 +166,22 @@
     ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
     ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
     ,'royalty-rate: 0.03
-    ,'max-supply: 1.0
-    ,'min-amount: 1.0
+    ,'collection-id:"k:2"
     ,'owner: "creator"
-    , 'latest-spec: {}
   },
   'vehicle_spec: {
     'vin: "2"
     ,'make: "Kadcars"
     ,'model: "K2"
   }
+  ,'collection-unique-supply:1337
+  ,'collection-id:"k:2"
+
   })
 (env-sigs
   [{'key:'dummy
    ,'caps:
-    [(marmalade.ledger.MINT "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0)
+    [(free.universal-ledger.MINT "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0)
      ]},
    { 'key: 'marmalade-admin
     ,'caps:[]
@@ -181,45 +189,52 @@
      { 'key: 'bob
       ,'caps:[]
        }
+    ,
+    { 'key: 'creator
+     ,'caps:[]
+      },
+      { 'key: 'bob
+       ,'caps:[]
+        }
    ])
 
 (use kip.token-manifest)
-(use marmalade.ledger)
+(use free.universal-ledger)
 (use marmalade.kadcar-factory)
 
-(expect "Create token global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
-  "created token global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
+(expect "Create token Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
+  "created token true"
   (marmalade.kadcar-factory.create-k2))
-;  (create-token "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1
-;    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) marmalade.fixed-quote-royalty-policy))
+;  (create-token "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1
+;    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) free.kadcars-nft-policy))
 
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(marmalade.ledger.MINT "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0), (coin.TRANSFER "bob" "admin" 1.1)
+    [(free.universal-ledger.MINT "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0), (coin.TRANSFER "bob" "admin" 1.1)
      ]},
      { 'key: 'bob
       ,'caps:[]
        }])
 
-(expect "mint global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA to bob, success"
+(expect "mint Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA to bob, success"
   true
-  (marmalade.kadcar-factory.mint-k2 "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" (read-keyset 'bob-guard)))
+  (marmalade.kadcar-factory.mint-k2 "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" (read-keyset 'bob-guard)))
 
-;  (mint 'global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA "bob" (read-keyset 'bob-guard) 1.0))
+;  (mint 'Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA "bob" (read-keyset 'bob-guard) 1.0))
 
 (expect "Bob is credited"
   1.0
-  (get-balance "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 'bob))
-(get-manifest "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA")
+  (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 'bob))
+(get-manifest "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA")
 
 (expect "Create and mint fqp token EVENTS"
-   [{"name": "marmalade.ledger.TOKEN","params": ["global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 0 0.0 marmalade.fixed-quote-royalty-policy]}
-   ,{"name": "marmalade.ledger.MINT","params": ["global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0]}
+   [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 0 0.0 free.kadcars-nft-policy]}
+   ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0]}
    ,{"name": "coin.TRANSFER","params": ["bob" "admin" 1.1]}
-   ,{"name": "marmalade.ledger.ACCOUNT_GUARD","params": ["global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"  (read-keyset 'bob-guard)]}
-   ,{"name": "marmalade.ledger.RECONCILE","params": ["global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
-   ,{"name": "marmalade.ledger.SUPPLY","params": ["global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0]}]
+   ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"  (read-keyset 'bob-guard)]}
+   ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
+   ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0]}]
   (map (remove 'module-hash) (env-events true)))
 (format "NOW TESTING NEW ONE" [])
 (get-k2-manifest "any")
@@ -238,24 +253,14 @@
  ,"buyer": "coin-buyer"
  ,"buyer-guard": {"keys": ["coin-buyer"], "pred": "keys-all"}
  ,"coin-buyer": {"keys": ["coin-buyer"], "pred": "keys-all"}
- ,'token: "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
+ ,'token: "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
  ,"bob": {"keys": ["bob"], "pred": "keys-all"}
- ,'token_spec: {
-   'fungible: coin
-   ,'creator: "creator"
-   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-   ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
-   ,'royalty-rate: 0.03
-   ,'max-supply: 1.0
-   ,'min-amount: 0.0
-   ,'owner: "creator"
-  , 'latest-spec: {}
- }})
-(use marmalade.ledger)
+ })
+(use free.universal-ledger)
 (env-sigs
  [{'key:'bob
   ,'caps:
-   [(marmalade.ledger.OFFER (read-msg 'token) "bob" 1.0 120)]}
+   [(free.universal-ledger.OFFER (read-msg 'token) "bob" 1.0 120)]}
    ])
 
  (expect "Sale succeeds"
@@ -265,17 +270,17 @@
  100.0
  (coin.get-balance 'coin-buyer))
 
-(expect "Seller is debited, sale account is credited global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
+(expect "Seller is debited, sale account is credited Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
  [0.0 1.0]
 (map (get-balance (read-msg 'token)) ['bob (sale-account)]))
 
   (expect "OFFER events"
-    [{"name": "marmalade.ledger.OFFER","params": [(read-msg 'token) "bob" 1.0 120]},
-     {"name": "marmalade.ledger.SALE","params": [(read-msg 'token) "bob" 1.0 120 (pact-id)]},
-     {"name": "marmalade.fixed-quote-royalty-policy.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 10.0 10.0 0.30000000000 "creator" (read-msg "quote")]},
-     {"name": "marmalade.ledger.ACCOUNT_GUARD","params": [(read-msg 'token) (sale-account) (create-pact-guard "SALE")]},
-     {"name": "marmalade.ledger.TRANSFER","params": [(read-msg 'token) "bob" (sale-account) 1.0]},
-     {"name": "marmalade.ledger.RECONCILE","params": [(read-msg 'token) 1.0
+    [{"name": "free.universal-ledger.OFFER","params": [(read-msg 'token) "bob" 1.0 120]},
+     {"name": "free.universal-ledger.SALE","params": [(read-msg 'token) "bob" 1.0 120 (pact-id)]},
+     {"name": "free.kadcars-nft-policy.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 10.0 10.0 0.30000000000 "creator" (read-msg "quote")]},
+     {"name": "free.universal-ledger.ACCOUNT_GUARD","params": [(read-msg 'token) (sale-account) (create-pact-guard "SALE")]},
+     {"name": "free.universal-ledger.TRANSFER","params": [(read-msg 'token) "bob" (sale-account) 1.0]},
+     {"name": "free.universal-ledger.RECONCILE","params": [(read-msg 'token) 1.0
      { "account": "bob",
        "current": 0.0,
        "previous": 1.0
@@ -291,7 +296,7 @@
 ,'caps: [
  (coin.TRANSFER "coin-buyer" "bob" 10.0)
  (coin.TRANSFER "coin-buyer" "creator" 1.0)
-  (marmalade.ledger.BUY "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
+  (free.universal-ledger.BUY "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
 ]}])
 
 (map (coin.get-balance ) ['coin-buyer 'bob 'creator])
@@ -308,7 +313,6 @@
  [90.000000000000 107.500000000000 100.300000000000]
  (map (coin.get-balance ) ['coin-buyer 'bob 'creator]))
 
-(get-ledger)
 
  (expect "minted tokens:"
   [0.0 1.0 0.0 1.0]
@@ -316,177 +320,17 @@
 
 (expect "k2:2 token balance for coin-buyer:"
  1.0
- (get-balance "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "coin-buyer"))
+ (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "coin-buyer"))
 
 
  (expect "k2:2 token balance for bob:"
   0.0
-  (get-balance "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"))
+  (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"))
 
   (expect "k2:2 token balance for escrow:"
    0.0
-   (get-balance "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
-(commit-tx)
+   (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
 
-
-
-
-;;;;;;; create and Mint first Kadcar NFT AS COLLECTION ;;;;;;;
-
-(begin-tx "Create & Mint collection token")
-(env-hash (hash "create-and-mint"))
-(env-data {
-   'upgrade: false
-  ,'ns: "marmalade"
-  ,'creator: "creator"
-  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
-  , "bob": {"keys": ["bob"], "pred": "keys-all"}
-  ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
-  ,'admin-guard: {"keys": ["bob"], "pred": "keys-all"}
-  ,'token_spec: {
-    'fungible: coin
-    ,'creator: "creator"
-    ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-    ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
-    ,'royalty-rate: 0.03
-    ,'max-supply: 1.0
-    ,'min-amount: 0.0
-    ,'owner: "creator"
-    , 'latest-spec: {}
-  }
-  ,'vehicle_spec: {
-    'vin: "1"
-    ,'make: "Kadcars"
-    ,'model: "K2"
-  }
-  ,"collection-owner": {"keys": ["collection-owner"], "pred": "keys-all"}
-  ,"some-weirdo": {"keys": ["some-weirdo"], "pred": "keys-all"}
-  })
-(env-sigs
-  [{'key:'dummy
-   ,'caps:
-    [(marmalade.ledger.MINT "K2#1" "bob" 1.0)
-     ]},
-   { 'key: 'collection-owner
-    ,'caps:[]
-     },
-   { 'key: 'some-weirdo
-    ,'caps:[
-        (marmalade.ledger.MINT "Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "some-weirdo" 1.0)
-        (coin.TRANSFER "some-weirdo" "admin" 1.1)
-    ]
-     }
-   ])
-
-(use kip.token-manifest)
-(use marmalade.ledger)
-
-
-(coin.create-account 'collection-owner (read-keyset 'collection-owner))
-(coin.create-account 'some-weirdo (read-keyset 'some-weirdo))
-
-
-(expect "collection created for Kadcars"
-  "collection created for Kadcars"
-  (create-collection "Kadcars" (read-keyset 'collection-owner) 5 marmalade.fixed-quote-royalty-policy)
-)
-
-(expect "Create token for collection"
-"created token Kadcars.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I for collection Kadcars"
-  (create-token-for-collection "Kadcars"
-    "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I"
-    (marmalade.kadcar-factory.build-k2-manifest "1")
-    marmalade.fixed-quote-royalty-policy
-  )
-)
-
-(expect "Create token for collection"
-"created token Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA for collection Kadcars"
-  (create-token-for-collection "Kadcars"
-    (marmalade.kadcar-factory.build-k2-manifest-token-id "2")
-    (marmalade.kadcar-factory.build-k2-manifest "2")
-    marmalade.fixed-quote-royalty-policy
-  )
-)
-
-(expect "Create token for collection"
-"created token Kadcars.Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE for collection Kadcars"
-  (create-token-for-collection "Kadcars"
-    (marmalade.kadcar-factory.build-k2-manifest-token-id "3")
-    (marmalade.kadcar-factory.build-k2-manifest "3")
-    marmalade.fixed-quote-royalty-policy
-  )
-)
-
-(expect "Minting token from collection available tokens"
-  "mint result true for token-id Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
-  (mint-token-from-collection "Kadcars"
-    "some-weirdo"
-    (read-keyset 'some-weirdo)
-    1
-  )
-)
-
-(expect "balance for some-weirdo to confirm ownership of minted NFT VIA collection"
- 1.0
- (get-balance "Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "some-weirdo"))
-
-(expect "Create and mint fqp token EVENTS"
-   [{"name": "marmalade.ledger.TOKEN","params": ["Kadcars.Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 0 0.0 marmalade.fixed-quote-royalty-policy]}
-   ,{"name": "marmalade.ledger.TOKEN","params": ["Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 0 0.0 marmalade.fixed-quote-royalty-policy]}
-   ,{"name": "marmalade.ledger.TOKEN","params": ["Kadcars.Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE" 0 0.0 marmalade.fixed-quote-royalty-policy]}
-   ,{"name": "marmalade.ledger.MINT","params": ["Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "some-weirdo" 1.0]}
-   ,{"name": "coin.TRANSFER","params": ["some-weirdo" "admin" 1.1]}
-   ,{"name": "marmalade.ledger.ACCOUNT_GUARD","params": ["Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "some-weirdo"  (read-keyset 'some-weirdo) ]}
-   ,{"name": "marmalade.ledger.RECONCILE","params": ["Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "some-weirdo","current": 1.0,"previous": 0.0}]}
-   ,{"name": "marmalade.ledger.SUPPLY","params": ["Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0]}]
-  (map (remove 'module-hash) (env-events true)))
-
-(commit-tx)
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; UPGRADING MANIFEST ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(begin-tx "Upgrading manifest")
-(use marmalade.kadcar-factory)
-
-(env-data
- {
- "buyer": "coin-buyer"
- ,"buyer-guard": {"keys": ["buyer"], "pred": "keys-all"}
- ,"coin-buyer": {"keys": ["coin-buyer"], "pred": "keys-all"}
- ,"some-weirdo": {"keys": ["some-weirdo"], "pred": "keys-all"}
- ,"collection-owner": {"keys": ["collection-owner"], "pred": "keys-all"}
- ,'token: "global.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
- ,"bob": {"keys": ["bob"], "pred": "keys-all"}
- ,'token_spec: {
-   'fungible: coin
-   ,'creator: "creator"
-   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-   ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
-   ,'royalty-rate: 0.03
-   ,'max-supply: 1.0
-   ,'min-amount: 0.0
-   ,'owner: "creator"
-   , 'latest-spec: {}
- }})
-(use marmalade.ledger)
-(env-sigs
- [
-   {'key:'collection-owner
-    ,'caps:
-    []},
-   {'key:'some-weirdo
-    ,'caps:
-     []},
-   {'key:'coin-buyer
-    ,'caps:
-     []}
-   ])
-
-
-(upgrade-manifest "Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "some-weirdo" "Kadcars" (build-k2-manifest-with-id "555"))
-(get-manifest "Kadcars.Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA")
+(free.kadcars-nft-policy.get-tokens-for-collection "k:2")
+(free.kadcars-nft-policy.get-cars-in-collection-by-owner "k:2" "coin-buyer")
 (commit-tx)
