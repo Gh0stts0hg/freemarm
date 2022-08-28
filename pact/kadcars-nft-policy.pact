@@ -271,6 +271,7 @@
   )
 
   (defun create-collection ()
+    (with-capability (GOVERNANCE)
     (let* (
             (creator-guard:guard (read-msg "creator-guard"))
             (collection-identifier:string (read-msg 'collection-id))
@@ -285,6 +286,7 @@
           )
           true
     )
+  )
 
     (defun enforce-collection (collection-id:string guard:guard)
 
