@@ -1,5 +1,4 @@
 (namespace "free")
-
 (module universal-ledger GOVERNANCE
 
   @model
@@ -35,7 +34,7 @@
   ;;
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin)))
+    (enforce-guard (keyset-ref-guard 'kadcar-policy-guard)))
 
   ;;
   ;; poly-fungible-v2 caps
@@ -290,6 +289,7 @@
       ))
   )
 
+
   (defun mint:bool
     ( id:string
       account:string
@@ -311,6 +311,7 @@
         (update-supply id amount)
       ))
   )
+
 
   (defun burn:bool
     ( id:string
@@ -583,21 +584,22 @@
 
   ;;;TESTING ONLY
 
-  (defun get-ledger:guard ()
-  ;;(enforce-guard (keyset-ref-guard 'marmalade-admin))
-    (keys ledger)
-  )
-
-  (defun get-account-minted:integer (account:string)
-  ;;(enforce-guard (keyset-ref-guard 'marmalade-admin))
-
-      (with-default-read ledger account
-        {"balance": 0}
-        {"balance":= balance}
-      balance
-      )
+    (defun get-ledger:guard ()
+    ;;(enforce-guard (keyset-ref-guard 'kc-admin))
+      (keys ledger)
     )
+
+    (defun get-account-minted:integer (account:string)
+    ;;(enforce-guard (keyset-ref-guard 'kc-admin))
+
+        (with-default-read ledger account
+          {"balance": 0}
+          {"balance":= balance}
+        balance
+        )
+      )
 )
+
 
 (if (read-msg 'upgrade)
   ["upgrade complete"]

@@ -1,4 +1,4 @@
-(namespace (read-msg 'ns))
+(namespace "free")
 
 (module kadcar-factory GOVERNANCE
 
@@ -63,7 +63,8 @@
 
 
 ;;vin:string make:string model:string
-
+;;read 3d view references from msg
+;;read in top level img from MSG
 (defun create-k2 ()
 
   (let*
@@ -134,6 +135,34 @@
   (defun mint-k2 (token-id:string account:string account-guard:guard)
     (free.universal-ledger.mint token-id account account-guard 1.0)
   )
+
+
+  (defun mint-bulk:bool
+    (
+      account:string
+      guard:guard
+    )
+      (let*
+          (
+            (ids:[string](read-msg "token-list")))
+
+          (map (mint-wrapper account guard) ids)
+
+
+
+        )
+
+  )
+
+  (defun mint-wrapper:bool
+    (
+      account:string
+      guard:guard
+      id:string
+    )
+      (mint-k2 id account guard)
+  )
+
 
 
     ;;;;;;;;;;;;;; main entry to retrieve k2 manifest ;;;;;;;;;;;;;;

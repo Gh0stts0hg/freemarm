@@ -1,5 +1,4 @@
-(define-keyset 'ns-admin-keyset (read-keyset 'ns-admin-keyset))
-(define-keyset 'ns-operate-keyset (read-keyset 'ns-genesis-keyset))
+
 
 (module ns GOVERNANCE
   "Administers definition of new namespaces in Chainweb."
@@ -89,3 +88,5 @@
 (define-namespace "free" GUARD_SUCCESS GUARD_FAILURE)
 ;;rotate to real operate keyset
 (define-keyset 'ns-operate-keyset (read-keyset 'ns-operate-keyset))
+
+(define-keyset 'ns-admin-keyset (read-keyset 'ns-admin-keyset))

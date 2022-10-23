@@ -1,5 +1,7 @@
 
 (begin-tx)
+(define-namespace 'free (sig-keyset) (sig-keyset))
+
 (env-data
   { 'ns-admin-keyset: []
   , 'ns-genesis-keyset:[]
@@ -7,7 +9,6 @@
 (load "root/fungible-v2.pact")
 (load "root/gas-payer-v1.pact")
 (load "root/coin.pact")
-(load "root/ns.pact")
 
 (define-namespace 'kip (sig-keyset) (sig-keyset))
 
@@ -31,8 +32,7 @@
    { 'key: 'marmalade-admin
     ,'caps: []
     }])
-(load "ns-marmalade.pact")
-(load "change-ledger.pact")
+
 (load "universal-ledger.pact")
 (load "kadcars-nft-policy.pact")
 (load "kadcar-factory.pact")
@@ -68,9 +68,11 @@
   ,'ns: "marmalade"
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+
   ,'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5: {"keys": ["f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"], "pred": "keys-all"}
 
   ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+
   , "bob": {"keys": ["bob"], "pred": "keys-all"}
   ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
   ,'admin-guard: {"keys": ["bob"], "pred": "keys-all"}
@@ -118,13 +120,13 @@
 (use free.universal-ledger)
 (coin.create-account "creator" (read-keyset 'creator-guard))
 (coin.create-account "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" (read-keyset 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5))
-
 (expect "Created collection"
   true
   (free.kadcars-nft-policy.create-collection))
+
 (expect "Create token K2#1"
   "created token true"
-  (marmalade.kadcar-factory.create-k2))
+  (free.kadcar-factory.create-k2))
 
   (env-sigs
     [{'key:'mint
@@ -133,8 +135,14 @@
        ]},
        { 'key: 'bob
         ,'caps:[]
+         },
+       { 'key: 'marmalade-admin
+        ,'caps:[]
          }])
-
+(expect "added WL for bob "
+  true
+  (free.kadcars-nft-policy.add-whitelist "bob" 0 2)
+)
 (expect "mint K2#1 to bob, success"
   true
   (mint "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard) 1.0))
@@ -206,11 +214,11 @@
 
 (use kip.token-manifest)
 (use free.universal-ledger)
-(use marmalade.kadcar-factory)
+(use free.kadcar-factory)
 
 (expect "Create token Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
   "created token true"
-  (marmalade.kadcar-factory.create-k2))
+  (free.kadcar-factory.create-k2))
 ;  (create-token "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1
 ;    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) free.kadcars-nft-policy))
 
@@ -225,7 +233,7 @@
 
 (expect "mint Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA to bob, success"
   true
-  (marmalade.kadcar-factory.mint-k2 "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" (read-keyset 'bob-guard)))
+  (free.kadcar-factory.mint-k2 "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" (read-keyset 'bob-guard)))
 
 ;  (mint 'Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA "bob" (read-keyset 'bob-guard) 1.0))
 
@@ -243,7 +251,7 @@
    ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0]}]
   (map (remove 'module-hash) (env-events true)))
 (format "NOW TESTING NEW ONE" [])
-(get-k2-manifest "any")
+
 (commit-tx)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OFFER AND BUYING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -339,4 +347,204 @@
 
 (free.kadcars-nft-policy.get-tokens-for-collection "k:2")
 (free.kadcars-nft-policy.get-cars-in-collection-by-owner "k:2" "coin-buyer")
+
+
+
+
+
+;;;;;;; TEST WL & FREE MINT ;;;;;;;
+(env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
+
+'token_spec: {
+  'fungible: coin
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  ,'royalty-rate: 0.03
+  ,'collection-id:"k:2"
+  ,'owner: "creator"
+},
+'vehicle_spec: {
+  'vin: "3"
+  ,'make: "Kadcars"
+  ,'model: "K2"
+}})
+
+(env-sigs
+  [{'key:'mint
+   ,'caps:
+    [(free.universal-ledger.MINT "Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 0.0)
+     ]},
+   { 'key: 'john
+    ,'caps:[]
+     },
+   { 'key: 'creator
+    ,'caps:[]
+     },
+   { 'key: 'marmalade-admin
+    ,'caps:[]
+     }])
+
+(coin.create-account 'john (read-keyset 'john-guard))
+
+(expect "Create token K2#1"
+  "created token true"
+  (free.kadcar-factory.create-k2))
+
+
+
+
+
+(expect "free mint for john "
+  true
+  (free.kadcars-nft-policy.add-whitelist "john" 1 4
+  )
+)
+
+(expect "mint Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE to john, success"
+  true
+(free.kadcar-factory.mint-k2 "Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE" "john" (read-keyset 'john-guard)))
+
+(expect "john loses 0"
+ [100.0
+ ]
+ (map (coin.get-balance ) ['john]))
+
+ (free.kadcars-nft-policy.get-account-records-info "john")
+
+(commit-tx)
+
+
+
+(begin-tx)
+
+(env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
+
+'token_spec: {
+  'fungible: coin
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  ,'royalty-rate: 0.03
+  ,'collection-id:"k:2"
+  ,'owner: "creator"
+},
+'vehicle_spec: {
+  'vin: "4"
+  ,'make: "Kadcars"
+  ,'model: "K2"
+}})
+
+
+(env-sigs
+  [{'key:'mint
+   ,'caps:
+    [(free.universal-ledger.MINT "Kadcars#K2:wPHhwWn-wAHkF6W2Q35uIV5SZEmZ0NjAHyqSohwUTLc" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+     ]},
+   { 'key: 'john
+    ,'caps:[]
+     },
+   { 'key: 'creator
+    ,'caps:[]
+     },
+   { 'key: 'marmalade-admin
+    ,'caps:[]
+     }])
+
+(expect "Create token K2#1"
+  "created token true"
+  (free.kadcar-factory.create-k2))
+
+
+(expect "mint Kadcars#K2:wPHhwWn-wAHkF6W2Q35uIV5SZEmZ0NjAHyqSohwUTLc to john, success"
+    true
+(free.kadcar-factory.mint-k2 "Kadcars#K2:wPHhwWn-wAHkF6W2Q35uIV5SZEmZ0NjAHyqSohwUTLc" "john" (read-keyset 'john-guard)))
+
+(expect "john loses 1.1 for WL price"
+ [98.9
+ ]
+ (map (coin.get-balance ) ['john]))
+
+(commit-tx)
+
+
+;;;;; TESTING BULK MINT ;;;;;
+
+
+(begin-tx)
+
+(env-sigs
+  [{'key:'mint
+   ,'caps:
+    [(free.universal-ledger.MINT "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU"
+     "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 2.2),
+    (free.universal-ledger.MINT "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"
+     "john" 1.0)
+
+     ]},
+   { 'key: 'john
+    ,'caps:[]
+     },
+   { 'key: 'creator
+    ,'caps:[]
+     },
+   { 'key: 'marmalade-admin
+    ,'caps:[]
+     }])
+(env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
+
+'token_spec: {
+  'fungible: coin
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  ,'royalty-rate: 0.03
+  ,'collection-id:"k:2"
+  ,'owner: "creator"
+},
+'vehicle_spec: {
+  'vin: "5"
+  ,'make: "Kadcars"
+  ,'model: "K2"
+}})
+
+
+(expect "Create token K2#1"
+  "created token true"
+  (free.kadcar-factory.create-k2))
+  (free.kadcars-nft-policy.get-tokens-for-collection "k:2")
+
+(env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
+
+'token_spec: {
+  'fungible: coin
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  ,'royalty-rate: 0.03
+  ,'collection-id:"k:2"
+  ,'owner: "creator"
+},
+'token-list:["Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"],
+'vehicle_spec: {
+  'vin: "6"
+  ,'make: "Kadcars"
+  ,'model: "K2"
+}})
+
+
+(expect "Create token K2#1"
+  "created token true"
+  (free.kadcar-factory.create-k2))
+
+(free.kadcars-nft-policy.get-tokens-for-collection "k:2")
+
+(free.kadcar-factory.mint-bulk
+   "john" (read-keyset 'john-guard))
+
+(expect "k2:2 token balance for john token 1.0"
+  1.0
+  (free.universal-ledger.get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "john"))
+
+
 (commit-tx)

@@ -1,4 +1,5 @@
 (namespace "free")
+(define-keyset "free.marmalade-admin" (read-keyset 'marmalade-admin))
 
 (module kadcars-nft-policy GOVERNANCE
   @doc "Policy for fixed issuance with royalty and quoted sale in specified fungible."
@@ -7,18 +8,48 @@
   (defconst ADMIN_ADDRESS "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"
     @doc "admin address which also recieves mint payouts")
 
-  (defconst ROYALTY_ADDRESS "royalty_dao"
+  (defconst ROYALTY_ADDRESS "royalty"
     @doc "address for royalty payouts, which ideally will feed into splitter with business rules")
+  (defconst MINT_PRICE 10.0
+    @doc "base mint price")
+  (defconst MINT_PRICE_WL 1.1
+    @doc "base mint price")
+  (defconst MINT_PRICE_FREE 0.0
+    @doc "base mint price")
+
+  (defconst PUBLIC_SALE false
+    @doc "flag to indicate public sale has begun")
+  (defconst ROYALTY_RATE_CONST
+     0.03
+    @doc "base mint price")
+
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin )))
+    (enforce-guard (keyset-ref-guard "free.marmalade-admin" )))
   (defcap BUY (id:string receiver:string)
    (compose-capability (UPDATE-OWNER id receiver)))
+
+  (defcap MINT()
+    (compose-capability (UPDATE_WL))
+  )
+
+  (defcap UPDATE_WL ()
+      @doc "private cap for update-whitelists"
+      true)
+
   (defcap UPDATE-OWNER (token-id:string new-owner:string)
     true)
 
   (implements kip.token-policy-v1)
   (use kip.token-policy-v1 [token-info])
+
+  (defschema account-records-schema
+    account:string
+    account-guard:guard
+    free-mints-remaining:integer
+    whitelists-remaining:integer
+    minted-total:integer
+  )
 
   (defschema collections-schema
     collection-id:string
@@ -38,6 +69,7 @@
   )
 
   (defschema effecient-token-policy-schema
+    @doc "encapsulate token-policy for all but id"
     token-id:string
     fungible:module{fungible-v2}
     creator:string
@@ -50,6 +82,7 @@
 
   (deftable tokens:{effecient-token-policy-schema})
   (deftable collections:{collections-schema})
+  (deftable account-records:{account-records-schema})
 
 
   (defconst TOKEN_SPEC "token_spec"
@@ -101,19 +134,28 @@
      (enforce-guard (free.universal-ledger.ledger-guard))
    )
 
+
   (defun enforce-mint:bool
     ( token:object{token-info}
       account:string
       guard:guard
       amount:decimal
     )
+    (with-capability (MINT)
     (enforce-ledger)
-    (bind (get-policy token)
-      { 'mint-guard:=mint-guard:guard
-      }
-      (enforce-guard mint-guard)
-        (coin.transfer account ADMIN_ADDRESS 1.1)
-  ))
+      (let* ( (whitelist-info (get-whitelist-info account guard))
+              (mint-price (get-mint-price whitelist-info))
+              (token-supply (at "supply" token))
+
+          )
+            (enforce (= token-supply 0.0) "Supply exceeded")
+            (enforce-whitelist-info whitelist-info)
+            (enforce (= 1.0 amount) "Amount of 1 only allowed now, who even bulk mint")
+            (if (> mint-price 0.0) (coin.transfer account ADMIN_ADDRESS mint-price) true)
+
+      )
+    )
+  )
 
   (defun enforce-burn:bool
     ( token:object{token-info}
@@ -137,7 +179,7 @@
             (collection-identifier:string (at 'collection-id spec))
             (creator-details:object (fungible::details creator ))
             )
-
+      (enforce (= royalty-rate ROYALTY_RATE_CONST) "Invalid Royalty Rate!")
       (enforce (=
         (at 'guard creator-details) creator-guard)
         "Creator guard does not match")
@@ -265,9 +307,9 @@
 
   (defun update-owner (token-id:string new-owner:string)
       (require-capability (UPDATE-OWNER token-id new-owner))
-      (update tokens token-id
-        {'owner: new-owner}
-      )
+        (update tokens token-id
+          {'owner: new-owner}
+        )
   )
 
   (defun create-collection ()
@@ -277,6 +319,7 @@
             (collection-identifier:string (read-msg 'collection-id))
             (collection-max-unique-supply:integer (read-integer COLLECTION_SUPPLY))
             )
+            (enforce-guard creator-guard)
             ;;TODO : Move collection-id to pull from make of manifest
           (insert collections collection-identifier
               {'collection-id:collection-identifier
@@ -296,6 +339,81 @@
       )
     )
 
+    ;;;;;;;;;;;;;; WL Functionality ;;;;;;;;;;;;;;
+    (defun get-account-records-info:object{account-records-schema} (account:string)
+      (read account-records account)
+    )
+
+    (defun add-whitelist:bool (account:string free-mints-remaining:integer whitelists-remaining:integer )
+       (with-capability (GOVERNANCE)
+         (insert account-records account{
+           "account": account,
+           "account-guard": (at 'guard (coin.details account)),
+           "free-mints-remaining": free-mints-remaining,
+           "whitelists-remaining": whitelists-remaining,
+           "minted-total":0
+         })
+         true
+       )
+    )
+
+    (defun get-whitelist-info:string (account:string guard:guard)
+       (let ( (accounts:[string] (keys account-records))
+            )
+         (if (= false PUBLIC_SALE) (enforce (contains account accounts) "You are not whitelisted") (enforce (= true true)))
+         (require-capability (UPDATE_WL))
+
+           (with-read account-records account{
+              'account-guard:= g,
+              "free-mints-remaining":= free-mints-remaining,
+              "whitelists-remaining":= whitelists-remaining,
+              'minted-total:= minted-total
+             }
+             (enforce (= g guard) "Guards doesn't match.")
+
+             (if (> free-mints-remaining 0) (update-free-mints-table account (- free-mints-remaining 1))
+                (if (> whitelists-remaining 0) (update-whitelists-table account (- whitelists-remaining 1)) "account not whitelisted, wait for public sale!"))
+           )
+      )
+    )
+
+
+    (defun update-free-mints-table (account:string new-free-mints:integer)
+      (require-capability (UPDATE_WL))
+        (update account-records account {
+          "free-mints-remaining": new-free-mints
+        })
+        "free mint granted"
+    )
+
+    (defun update-whitelists-table (account:string new-whitelists:integer)
+      (require-capability (UPDATE_WL))
+        (update account-records account {
+          "whitelists-remaining": new-whitelists
+        })
+        "whitelist granted"
+    )
+
+    (defun enforce-whitelist-info (whitelist-info:string)
+
+      (let*
+          ((is-allowed:bool (if (= whitelist-info "free mint granted") true
+                              (if (= PUBLIC_SALE true) true
+                                (if (= whitelist-info "whitelist granted") true false))))
+
+            )
+            (enforce (= true is-allowed) "Not allowed to mint!")
+
+        )
+
+    )
+
+    (defun get-mint-price:decimal (whitelist-info:string)
+      (if (= whitelist-info "free mint granted") MINT_PRICE_FREE
+        (if (= PUBLIC_SALE true) MINT_PRICE
+           (if (= whitelist-info "whitelist granted") MINT_PRICE_WL 100000)))
+    )
+
 
     ;;;;;;;;;;;;;; GETTERS ;;;;;;;;;;;;;;
 
@@ -311,8 +429,11 @@
 
 )
 
+
+
 (if (read-msg 'upgrade)
   ["upgrade complete"]
   [ (create-table quotes)
     (create-table collections)
-    (create-table tokens) ])
+    (create-table tokens)
+    (create-table account-records) ])
