@@ -309,7 +309,7 @@
  {'key: 'coin-buyer
 ,'caps: [
  (coin.TRANSFER "coin-buyer" "bob" 10.0)
- (coin.TRANSFER "coin-buyer" "creator" 1.0)
+ (coin.TRANSFER "coin-buyer" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.0)
   (free.universal-ledger.BUY "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
 ]}])
 
@@ -324,8 +324,8 @@
  (map (get-balance (read-msg 'token)) ['bob (sale-account) 'coin-buyer]))
 
 (expect "coin-buyer is debited on coin balance by price"
- [90.000000000000 107.500000000000 100.300000000000]
- (map (coin.get-balance ) ['coin-buyer 'bob 'creator]))
+ [90.000000000000 107.500000000000 100.0 102.500000000000]
+ (map (coin.get-balance ) ['coin-buyer 'bob 'creator "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"]))
 
 
  (expect "minted tokens:"

@@ -8,7 +8,7 @@
   (defconst ADMIN_ADDRESS "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"
     @doc "admin address which also recieves mint payouts")
 
-  (defconst ROYALTY_ADDRESS "royalty"
+  (defconst ROYALTY_ADDRESS "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"
     @doc "address for royalty payouts, which ideally will feed into splitter with business rules")
   (defconst MINT_PRICE 10.0
     @doc "base mint price")
@@ -289,7 +289,7 @@
                    (payout:decimal (- sale-price royalty-payout)) )
               (if
                 (> royalty-payout 0.0)
-                (fungible::transfer buyer creator royalty-payout)
+                (fungible::transfer buyer ROYALTY_ADDRESS royalty-payout)
                 "No royalty")
               (fungible::transfer buyer recipient payout)))
               true
