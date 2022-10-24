@@ -55,7 +55,7 @@
 ;;;;;;;;;;;;;; Capabilities ;;;;;;;;;;;;;;
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin)))
+    (enforce-guard (keyset-ref-guard "free.kc-policy-admin")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;; MARM WRAPPERS ;;;;;;;;;;;;;;;;;;;;;;;;
