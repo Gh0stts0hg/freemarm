@@ -158,7 +158,9 @@
             (enforce (= token-supply 0.0) "Supply exceeded")
             (enforce-whitelist-info whitelist-info)
             (enforce (= 1.0 amount) "Amount of 1 only allowed for Non fungibles")
-            (if (> mint-price 0.0) (coin.transfer account ADMIN_ADDRESS mint-price) true)
+            (if (!= account ADMIN_ADDRESS)
+                (if (> mint-price 0.0) (coin.transfer account ADMIN_ADDRESS mint-price) true) true
+            )
             (bind (get-collection collection-id)
               {
                 'created-token-list:= created-tokenList,
