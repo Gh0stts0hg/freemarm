@@ -40,8 +40,8 @@
   (defcap UPDATE-OWNER (token-id:string new-owner:string)
     true)
 
-  (implements kip.token-policy-v1)
-  (use kip.token-policy-v1 [token-info])
+  (implements free.universal-token-policy-v1)
+  (use free.universal-token-policy-v1 [token-info])
 
   (defschema account-records-schema
     account:string
@@ -169,6 +169,7 @@
   (defun enforce-init:bool
     ( token:object{token-info}
     )
+    (with-capability (GOVERNANCE)
     (enforce-ledger)
     (let* ( (spec:object{token-policy-schema} (read-msg TOKEN_SPEC))
             (fungible:module{fungible-v2} (at 'fungible spec))
@@ -208,7 +209,8 @@
       )
 
 
-    true
+      true
+    )
   )
 
   (defun enforce-offer:bool

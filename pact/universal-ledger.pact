@@ -10,8 +10,8 @@
   (use util.fungible-util)
   (use kip.token-manifest)
 
-  (implements kip.poly-fungible-v2)
-  (use kip.poly-fungible-v2 [account-details sender-balance-change receiver-balance-change])
+  (implements free.universal-poly-fungible-v2)
+  (use free.universal-poly-fungible-v2 [account-details sender-balance-change receiver-balance-change])
 
   ;;
   ;; Tables/Schemas
@@ -24,7 +24,7 @@
     manifest:object{manifest}
     precision:integer
     supply:decimal
-    policy:module{kip.token-policy-v1}
+    policy:module{free.universal-token-policy-v1}
   )
 
   (deftable tokens:{token-schema})
@@ -79,7 +79,7 @@
     @event true
   )
 
-  (defcap TOKEN:bool (id:string precision:integer supply:decimal policy:module{kip.token-policy-v1})
+  (defcap TOKEN:bool (id:string precision:integer supply:decimal policy:module{free.universal-token-policy-v1})
     @event
     true
   )
@@ -146,13 +146,13 @@
   )
 
   (defschema policy-info
-    policy:module{kip.token-policy-v1}
-    token:object{kip.token-policy-v1.token-info}
+    policy:module{free.universal-token-policy-v1}
+    token:object{free.universal-token-policy-v1.token-info}
   )
 
   (defun get-policy-info:object{policy-info} (id:string)
     (with-read tokens id
-      { 'policy := policy:module{kip.token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v1}
       , 'supply := supply
       , 'precision := precision
       , 'manifest := manifest
@@ -193,7 +193,7 @@
     ( id:string
       precision:integer
       manifest:object{manifest}
-      policy:module{kip.token-policy-v1}
+      policy:module{free.universal-token-policy-v1}
     )
     (enforce-verify-manifest manifest)
     (policy::enforce-init
@@ -262,7 +262,7 @@
       amount:decimal
     )
     (bind (get-policy-info id)
-      { 'policy := policy:module{kip.token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v1}
       , 'token := token }
       (policy::enforce-transfer token sender (account-guard id sender) receiver amount))
   )
@@ -298,7 +298,7 @@
     )
     (with-capability (MINT id account amount)
       (bind (get-policy-info id)
-        { 'policy := policy:module{kip.token-policy-v1}
+        { 'policy := policy:module{free.universal-token-policy-v1}
         , 'token := token }
         (policy::enforce-mint token account guard amount))
       (let
@@ -320,7 +320,7 @@
     )
     (with-capability (BURN id account amount)
       (bind (get-policy-info id)
-        { 'policy := policy:module{kip.token-policy-v1}
+        { 'policy := policy:module{free.universal-token-policy-v1}
         , 'token := token }
         (policy::enforce-burn token account amount))
       (let
@@ -520,7 +520,7 @@
     @doc "Initiate sale with by SELLER by escrowing AMOUNT of TOKEN until TIMEOUT."
     (require-capability (SALE_PRIVATE (pact-id)))
     (bind (get-policy-info id)
-      { 'policy := policy:module{kip.token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v1}
       , 'token := token }
       (policy::enforce-offer token seller amount (pact-id)))
     (let
@@ -560,7 +560,7 @@
     @doc "Complete sale with transfer."
     (require-capability (SALE_PRIVATE (pact-id)))
     (bind (get-policy-info id)
-      { 'policy := policy:module{kip.token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v1}
       , 'token := token }
       (policy::enforce-buy token seller buyer buyer-guard amount sale-id))
     (let
