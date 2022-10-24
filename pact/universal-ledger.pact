@@ -34,7 +34,7 @@
   ;;
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'kadcar-policy-guard)))
+    (enforce-guard (keyset-ref-guard "free.universal-admin")))
 
   ;;
   ;; poly-fungible-v2 caps

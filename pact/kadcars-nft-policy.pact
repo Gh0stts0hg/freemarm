@@ -1,5 +1,5 @@
 (namespace "free")
-(define-keyset "free.marmalade-admin" (read-keyset 'marmalade-admin))
+(define-keyset "free.kc-policy-admin" (read-keyset 'marmalade-admin))
 
 (module kadcars-nft-policy GOVERNANCE
   @doc "Policy for fixed issuance with royalty and quoted sale in specified fungible."
@@ -25,7 +25,7 @@
 
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard "free.marmalade-admin" )))
+    (enforce-guard (keyset-ref-guard "free.kc-policy-admin" )))
   (defcap BUY (id:string receiver:string)
    (compose-capability (UPDATE-OWNER id receiver)))
 
@@ -54,10 +54,15 @@
   (defschema collections-schema
     collection-id:string
     collection-guard:guard
-    token-list:[string]
+    created-token-list:[string]
+    minted-token-list:[string]
     max-unique-supply:integer
   )
 
+  ;; 1. when creating add to created token list
+  ;; 2.1 when minting, remove from created-list
+  ;; 2.2 when minting, add to minted-token list
+  ;;
   (defschema token-policy-schema
     fungible:module{fungible-v2}
     creator:string
@@ -146,13 +151,24 @@
       (let* ( (whitelist-info (get-whitelist-info account guard))
               (mint-price (get-mint-price whitelist-info))
               (token-supply (at "supply" token))
+              (token-policy-info (get-policy token))
+              (collection-id (at 'collection-id token-policy-info))
 
           )
             (enforce (= token-supply 0.0) "Supply exceeded")
             (enforce-whitelist-info whitelist-info)
-            (enforce (= 1.0 amount) "Amount of 1 only allowed now, who even bulk mint")
+            (enforce (= 1.0 amount) "Amount of 1 only allowed for Non fungibles")
             (if (> mint-price 0.0) (coin.transfer account ADMIN_ADDRESS mint-price) true)
+            (bind (get-collection collection-id)
+              {
+                'created-token-list:= created-tokenList,
+                'minted-token-list:= minted-tokenList
+              }
+              (update collections collection-id
 
+                {'created-token-list: (filter (!= (at 'id token)) created-tokenList),
+                'minted-token-list: (+ [(at 'id token)] minted-tokenList)})
+            )
       )
     )
   )
@@ -201,9 +217,9 @@
         , 'royalty-rate: royalty-rate }
         )
         (bind (get-collection collection-identifier)
-          {'token-list:=tokenList}
+          {'created-token-list:=tokenList}
           (update collections collection-identifier
-            {'token-list: (+ [(at 'id token)] tokenList)}
+            {'created-token-list: (+ [(at 'id token)] tokenList)}
           )
         )
       )
@@ -326,7 +342,8 @@
           (insert collections collection-identifier
               {'collection-id:collection-identifier
               ,'collection-guard:creator-guard
-              ,'token-list:[]
+              ,'created-token-list:[]
+              ,'minted-token-list:[]
               ,'max-unique-supply:collection-max-unique-supply})
           )
           true
@@ -419,9 +436,14 @@
 
     ;;;;;;;;;;;;;; GETTERS ;;;;;;;;;;;;;;
 
-    (defun get-tokens-for-collection (collection-id:string)
+    (defun get-non-minted-tokens-for-collection (collection-id:string)
 
-       (at "token-list" (read collections collection-id ["token-list"]))
+       (at "created-token-list" (read collections collection-id ["created-token-list"]))
+    )
+
+    (defun get-minted-tokens-for-collection (collection-id:string)
+
+       (at "minted-token-list" (read collections collection-id ["minted-token-list"]))
     )
 
     (defun get-cars-in-collection-by-owner (collection-id:string owner:string)
