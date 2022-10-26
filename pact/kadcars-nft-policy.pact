@@ -21,7 +21,10 @@
     @doc "flag to indicate public sale has begun")
   (defconst ROYALTY_RATE_CONST
      0.03
-    @doc "base mint price")
+    @doc "base royalty rate")
+  (defconst REDUCED_PRICE_ROYALTY_RATE_CONST
+     0.05
+    @doc "adjusted royalty rate for selling below base mint price")
 
 
   (defcap GOVERNANCE ()
@@ -245,23 +248,24 @@
        ,'royalty-rate:= royalty-rate:decimal
        ,'creator:= creator:string
       }
-    (let* ( (spec:object{quote-spec} (read-msg QUOTE-MSG-KEY))
-            (price:decimal (at 'price spec))
-            (recipient:string (at 'recipient spec))
-            (recipient-guard:guard (at 'recipient-guard spec))
-            (recipient-details:object (fungible::details recipient))
-            (sale-price:decimal (* amount price))
-            (royalty-payout:decimal
-               (floor (* sale-price royalty-rate) (fungible::precision))) )
-      (fungible::enforce-unit sale-price)
-      (enforce (< 0.0 price) "Offer price must be positive")
-      (enforce (=
-        (at 'guard recipient-details) recipient-guard)
-        "Recipient guard does not match")
-      (insert quotes sale-id { 'id: (at 'id token), 'spec: spec })
-      (emit-event (QUOTE sale-id (at 'id token) amount price sale-price royalty-payout creator spec)))
-      true
-  )
+      (let* ( (spec:object{quote-spec} (read-msg QUOTE-MSG-KEY))
+              (price:decimal (at 'price spec))
+              (recipient:string (at 'recipient spec))
+              (recipient-guard:guard (at 'recipient-guard spec))
+              (recipient-details:object (fungible::details recipient))
+              (sale-price:decimal (* amount price))
+              (adjusted-royalty-rate:decimal (get-royalty-rate sale-price royalty-rate ))
+              (royalty-payout:decimal
+                 (floor (* sale-price adjusted-royalty-rate) (fungible::precision))) )
+        (fungible::enforce-unit sale-price)
+        (enforce (< 0.0 price) "Offer price must be positive")
+        (enforce (=
+          (at 'guard recipient-details) recipient-guard)
+          "Recipient guard does not match")
+        (insert quotes sale-id { 'id: (at 'id token), 'spec: spec })
+        (emit-event (QUOTE sale-id (at 'id token) amount price sale-price royalty-payout creator spec)))
+        true
+      )
   )
 
   (defun enforce-buy:bool
@@ -286,8 +290,9 @@
             , 'recipient := recipient:string
             }
             (let* ((sale-price:decimal (* amount price))
+                   (adjusted-royalty-rate (get-royalty-rate sale-price royalty-rate))
                    (royalty-payout:decimal
-                      (floor (* sale-price royalty-rate) (fungible::precision)))
+                      (floor (* sale-price adjusted-royalty-rate) (fungible::precision)))
                    (payout:decimal (- sale-price royalty-payout)) )
               (if
                 (> royalty-payout 0.0)
@@ -435,6 +440,11 @@
            (if (= whitelist-info "whitelist granted") MINT_PRICE_WL 100000)))
     )
 
+    ;;;;;;;;;;;;;; ROYALTY ;;;;;;;;;;;;;;
+
+    (defun get-royalty-rate (sale-price:decimal configured-royalty-rate:decimal)
+        (if (< sale-price MINT_PRICE) REDUCED_PRICE_ROYALTY_RATE_CONST configured-royalty-rate)
+    )
 
     ;;;;;;;;;;;;;; GETTERS ;;;;;;;;;;;;;;
 

@@ -347,10 +347,10 @@
 
 (free.kadcars-nft-policy.get-cars-in-collection-by-owner "k:2" "coin-buyer")
 
+(rollback-tx)
 
 
-
-
+(begin-tx)
 ;;;;;;; TEST WL & FREE MINT ;;;;;;;
 (env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
 
@@ -574,3 +574,92 @@
 
 
 (commit-tx)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; BELOW RATE ADJUSTED ROYALTY OFFER AND BUYING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(begin-tx "Reduced price Sale Offer")
+
+(env-data
+ {
+  "quote": {
+      "price": 7.0
+     ,"recipient": "bob"
+     ,"recipient-guard": {"keys": ["bob"], "pred":"keys-all"}
+   }
+ ,"buyer": "coin-buyer"
+ ,"buyer-guard": {"keys": ["coin-buyer"], "pred": "keys-all"}
+ ,"coin-buyer": {"keys": ["coin-buyer"], "pred": "keys-all"}
+ ,'token: "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU"
+ ,"bob": {"keys": ["bob"], "pred": "keys-all"}
+ })
+(use free.universal-ledger)
+(env-sigs
+ [{'key:'john
+  ,'caps:
+   [(free.universal-ledger.OFFER (read-msg 'token) "john" 1.0 120)]}
+   ])
+(expect "Sale succeeds"
+  true
+  (sale (read-msg 'token) 'john 1.0 120))
+
+(expect "Seller is debited, sale account is credited Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU"
+ [0.0 1.0]
+(map (get-balance (read-msg 'token)) ['john (sale-account)]))
+
+  (expect "OFFER events"
+    [{"name": "free.universal-ledger.OFFER","params": [(read-msg 'token) "john" 1.0 120]},
+     {"name": "free.universal-ledger.SALE","params": [(read-msg 'token) "john" 1.0 120 (pact-id)]},
+     {"name": "free.kadcars-nft-policy.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 7.0 7.0 0.35000000000 "creator" (read-msg "quote")]},
+     {"name": "free.universal-ledger.ACCOUNT_GUARD","params": [(read-msg 'token) (sale-account) (create-pact-guard "SALE")]},
+     {"name": "free.universal-ledger.TRANSFER","params": [(read-msg 'token) "john" (sale-account) 1.0]},
+     {"name": "free.universal-ledger.RECONCILE","params": [(read-msg 'token) 1.0
+     { "account": "john",
+       "current": 0.0,
+       "previous": 1.0
+     }  { "account": (sale-account),
+       "current": 1.0,
+       "previous": 0.0
+       }]}]
+   (map (remove 'module-hash) (env-events true)))
+
+
+(env-sigs [
+ {'key: 'coin-buyer
+,'caps: [
+ (coin.TRANSFER "coin-buyer" "bob" 10.0)
+ (coin.TRANSFER "coin-buyer" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.0)
+  (free.universal-ledger.BUY "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "john" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
+]}])
+
+(read-keyset 'buyer-guard)
+(expect "buy suceeds"
+ true
+ (continue-pact 1))
+
+(expect "Seller is debited, sale account is debited, buyer is credited on K:2#2 balance"
+ [0.0 0.0 1.0]
+ (map (get-balance (read-msg 'token)) ['john (sale-account) 'coin-buyer]))
+
+(expect "coin-buyer is debited on coin balance by price"
+ [93.000000000000 104.450000000000 100.0 105.850000000000]
+ (map (coin.get-balance ) ['coin-buyer 'bob 'creator "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"]))
+
+
+ (expect "minted tokens:"
+  [1.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0]
+  (map (get-account-minted ) (get-ledger)))
+
+(expect "k2:2 token balance for coin-buyer:"
+ 1.0
+ (get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "coin-buyer"))
+
+
+ (expect "k2:2 token balance for john:"
+  0.0
+  (get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "john"))
+
+  (expect "k2:2 token balance for escrow:"
+   0.0
+   (get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
+
+(rollback-tx)
