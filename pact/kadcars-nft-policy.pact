@@ -444,6 +444,28 @@
            (if (= whitelist-info "whitelist granted") MINT_PRICE_WL 100000)))
     )
 
+    (defun add-to-whitelists-table (account:string additional-whitelists:integer additional-freemints:integer)
+      (with-capability (GOVERNANCE)
+        (bind (get-whitelist account)
+          {
+            'free-mints-remaining:=free-mints,
+            'whitelists-remaining:=whitelists
+
+          }
+          (update account-records account {
+            "whitelists-remaining": (+ whitelists additional-whitelists),
+            "free-mints-remaining": (+ free-mints additional-freemints)
+
+          })
+
+          "new WL Spots added by Admin"
+        )
+      )
+    )
+
+    (defun get-whitelist:object{collections-schema} (account-id:string)
+      (read account-records account-id)
+    )
     ;;;;;;;;;;;;;; ROYALTY ;;;;;;;;;;;;;;
 
     (defun get-royalty-rate (sale-price:decimal configured-royalty-rate:decimal)
