@@ -32,8 +32,9 @@
   (defcap BUY (id:string receiver:string)
    (compose-capability (UPDATE-OWNER id receiver)))
 
-  (defcap MINT()
+  (defcap MINT(token-id:string new-owner:string)
     (compose-capability (UPDATE_WL))
+    (compose-capability (UPDATE-OWNER token-id new-owner))
   )
 
   (defcap UPDATE_WL ()
@@ -149,13 +150,14 @@
       guard:guard
       amount:decimal
     )
-    (with-capability (MINT)
+    (with-capability (MINT (at 'id token) account)
     (enforce-ledger)
       (let* ( (whitelist-info (get-whitelist-info account guard))
               (mint-price (get-mint-price whitelist-info))
               (token-supply (at "supply" token))
               (token-policy-info (get-policy token))
               (collection-id (at 'collection-id token-policy-info))
+              (token-id (at 'id token))
 
           )
             (enforce (= token-supply 0.0) "Supply exceeded")
@@ -171,9 +173,11 @@
               }
               (update collections collection-id
 
-                {'created-token-list: (filter (!= (at 'id token)) created-tokenList),
-                'minted-token-list: (+ [(at 'id token)] minted-tokenList)})
+                {'created-token-list: (filter (!= token-id) created-tokenList),
+                'minted-token-list: (
+                  + [token-id] minted-tokenList)})
             )
+            (update-owner token-id account)
       )
     )
   )

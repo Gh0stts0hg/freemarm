@@ -136,7 +136,6 @@
     (free.universal-ledger.mint token-id account account-guard 1.0)
   )
 
-
   (defun mint-bulk:bool
     (
       account:string
@@ -144,14 +143,10 @@
     )
       (let*
           (
-            (ids:[string](read-msg "token-list")))
-
+            (ids:[string](read-msg "token-list"))
+          )
           (map (mint-wrapper account guard) ids)
-
-
-
         )
-
   )
 
   (defun mint-wrapper:bool
