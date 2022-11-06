@@ -131,7 +131,7 @@
   (env-sigs
     [{'key:'mint
      ,'caps:
-      [(free.universal-ledger.MINT "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+      [(free.universal-ledger.MINT "Kadcars#K2:1" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
        ]},
        { 'key: 'bob
         ,'caps:[]
@@ -143,21 +143,23 @@
   true
   (free.kadcars-nft-policy.add-whitelist "bob" 0 2)
 )
+
+
 (expect "mint K2#1 to bob, success"
   true
-  (mint "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard) 1.0))
+  (mint "Kadcars#K2:1" "bob" (read-keyset 'bob-guard) 1.0))
 
 (expect "Bob is credited"
   1.0
-  (get-balance "Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 'bob))
+  (get-balance "Kadcars#K2:1" 'bob))
 
 (expect "Create and mint fqp token EVENTS"
- [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 0 0.0 free.kadcars-nft-policy]}
- ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" 1.0]}
+ [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:1" 0 0.0 free.kadcars-nft-policy]}
+ ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:1" "bob" 1.0]}
  ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1]}
- ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" "bob" (read-keyset 'bob-guard)]}
- ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
- ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:xIBr9iRAPRSzBIAM-f9VuWMcrPTAJKBgM8hNxYS5u3I" 1.0]}]
+ ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:1" "bob" (read-keyset 'bob-guard)]}
+ ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:1" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
+ ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:1" 1.0]}]
 (map (remove 'module-hash) (env-events true)))
 
 (commit-tx)
@@ -225,30 +227,30 @@
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+    [(free.universal-ledger.MINT "Kadcars#K2:2" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
      ]},
      { 'key: 'bob
       ,'caps:[]
        }])
 
-(expect "mint Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA to bob, success"
+(expect "mint Kadcars#K2:2 to bob, success"
   true
-  (free.kadcar-factory.mint-k2 "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" (read-keyset 'bob-guard)))
+  (free.kadcar-factory.mint-k2 "Kadcars#K2:2" "bob" (read-keyset 'bob-guard)))
 
 ;  (mint 'Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA "bob" (read-keyset 'bob-guard) 1.0))
 
 (expect "Bob is credited"
   1.0
-  (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 'bob))
-(get-manifest "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA")
+  (get-balance "Kadcars#K2:2" 'bob))
+(get-manifest "Kadcars#K2:2")
 
 (expect "Create and mint fqp token EVENTS"
-   [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 0 0.0 free.kadcars-nft-policy]}
-   ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" 1.0]}
+   [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:2" 0 0.0 free.kadcars-nft-policy]}
+   ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:2" "bob" 1.0]}
    ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1]}
-   ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"  (read-keyset 'bob-guard)]}
-   ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
-   ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1.0]}]
+   ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:2" "bob"  (read-keyset 'bob-guard)]}
+   ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:2" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
+   ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:2" 1.0]}]
   (map (remove 'module-hash) (env-events true)))
 (format "NOW TESTING NEW ONE" [])
 
@@ -267,7 +269,7 @@
  ,"buyer": "coin-buyer"
  ,"buyer-guard": {"keys": ["coin-buyer"], "pred": "keys-all"}
  ,"coin-buyer": {"keys": ["coin-buyer"], "pred": "keys-all"}
- ,'token: "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
+ ,'token: "Kadcars#K2:2"
  ,"bob": {"keys": ["bob"], "pred": "keys-all"}
  })
 (use free.universal-ledger)
@@ -310,7 +312,7 @@
 ,'caps: [
  (coin.TRANSFER "coin-buyer" "bob" 10.0)
  (coin.TRANSFER "coin-buyer" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.0)
-  (free.universal-ledger.BUY "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
+  (free.universal-ledger.BUY "Kadcars#K2:2" "bob" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
 ]}])
 
 (map (coin.get-balance ) ['coin-buyer 'bob 'creator])
@@ -329,21 +331,21 @@
 
 
  (expect "minted tokens:"
-  [0.0 1.0 0.0 1.0]
-  (map (get-account-minted ) (get-ledger)))
+  [1.0 0.0 1.0 0.0]
+  (map (get-account-minted) (get-ledger)))
 
 (expect "k2:2 token balance for coin-buyer:"
  1.0
- (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "coin-buyer"))
+ (get-balance "Kadcars#K2:2" "coin-buyer"))
 
 
  (expect "k2:2 token balance for bob:"
   0.0
-  (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "bob"))
+  (get-balance "Kadcars#K2:2" "bob"))
 
   (expect "k2:2 token balance for escrow:"
    0.0
-   (get-balance "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
+   (get-balance "Kadcars#K2:2" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
 
 (free.kadcars-nft-policy.get-cars-in-collection-by-owner "k:2" "coin-buyer")
 
@@ -372,7 +374,7 @@
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 0.0)
+    [(free.universal-ledger.MINT "Kadcars#K2:3" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 0.0)
      ]},
    { 'key: 'john
     ,'caps:[]
@@ -400,9 +402,9 @@
   )
 )
 
-(expect "mint Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE to john, success"
+(expect "mint Kadcars#K2:3 to john, success"
   true
-(free.kadcar-factory.mint-k2 "Kadcars#K2:PMGqgVfPpw1SOA4vGzwqEc88C4qQ_I5yW9UtYcm18bE" "john" (read-keyset 'john-guard)))
+(free.kadcar-factory.mint-k2 "Kadcars#K2:3" "john" (read-keyset 'john-guard)))
 
 (expect "john loses 0"
  [100.0
@@ -438,7 +440,7 @@
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:wPHhwWn-wAHkF6W2Q35uIV5SZEmZ0NjAHyqSohwUTLc" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+    [(free.universal-ledger.MINT "Kadcars#K2:4" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
      ]},
    { 'key: 'john
     ,'caps:[]
@@ -455,9 +457,9 @@
   (free.kadcar-factory.create-k2))
 
 
-(expect "mint Kadcars#K2:wPHhwWn-wAHkF6W2Q35uIV5SZEmZ0NjAHyqSohwUTLc to john, success"
+(expect "mint Kadcars#K2:4 to john, success"
     true
-(free.kadcar-factory.mint-k2 "Kadcars#K2:wPHhwWn-wAHkF6W2Q35uIV5SZEmZ0NjAHyqSohwUTLc" "john" (read-keyset 'john-guard)))
+(free.kadcar-factory.mint-k2 "Kadcars#K2:4" "john" (read-keyset 'john-guard)))
 
 (expect "john loses 1.1 for WL price"
  [98.9
@@ -475,10 +477,9 @@
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU"
-     "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 2.2),
-    (free.universal-ledger.MINT "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"
-     "john" 1.0)
+    [(free.universal-ledger.MINT "Kadcars#K2:5" "john" 1.0),
+     (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 2.2),
+     (free.universal-ledger.MINT "Kadcars#K2:6" "john" 1.0)
 
      ]},
    { 'key: 'john
@@ -508,7 +509,7 @@
 }})
 
 
-(expect "Create token K2#1"
+(expect "Create token Kadcars#K2:5"
   "created token true"
   (free.kadcar-factory.create-k2))
 
@@ -523,7 +524,7 @@
   ,'collection-id:"k:2"
   ,'owner: "creator"
 },
-'token-list:["Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"],
+'token-list:["Kadcars#K2:5" "Kadcars#K2:6"],
 'vehicle_spec: {
   'vin: "6"
   ,'make: "Kadcars"
@@ -531,17 +532,21 @@
 }})
 
 
-(expect "Create token K2#1"
+(expect "Create token Kadcars#K2:6"
   "created token true"
   (free.kadcar-factory.create-k2))
 
-
+(expect "minted bulk"
+    ["Kadcars#K2:5" "Kadcars#K2:6"]
 (free.kadcar-factory.mint-bulk
-   "john" (read-keyset 'john-guard))
+   "john" (read-keyset 'john-guard)))
+
+
+
 
 (expect "k2:2 token balance for john token 1.0"
   1.0
-  (free.universal-ledger.get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "john"))
+  (free.universal-ledger.get-balance "Kadcars#K2:6" "john"))
 
 
 ;;;;; CREATING TOKEN TO TEST NON_MINTED_TOKENS RETRIEVAL
@@ -569,8 +574,6 @@
 
   (free.kadcar-factory.create-k2))
 
-(free.kadcars-nft-policy.get-minted-tokens-for-collection "k:2")
-(free.kadcars-nft-policy.get-non-minted-tokens-for-collection "k:2")
 
 
 (commit-tx)
@@ -589,7 +592,7 @@
  ,"buyer": "coin-buyer"
  ,"buyer-guard": {"keys": ["coin-buyer"], "pred": "keys-all"}
  ,"coin-buyer": {"keys": ["coin-buyer"], "pred": "keys-all"}
- ,'token: "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU"
+ ,'token: "Kadcars#K2:6"
  ,"bob": {"keys": ["bob"], "pred": "keys-all"}
  })
 (use free.universal-ledger)
@@ -628,7 +631,7 @@
 ,'caps: [
  (coin.TRANSFER "coin-buyer" "bob" 10.0)
  (coin.TRANSFER "coin-buyer" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.0)
-  (free.universal-ledger.BUY "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "john" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
+  (free.universal-ledger.BUY "Kadcars#K2:6" "john" "coin-buyer" 1.0 120 "ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4")
 ]}])
 
 (read-keyset 'buyer-guard)
@@ -646,20 +649,27 @@
 
 
  (expect "minted tokens:"
-  [1.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0]
+  [1.0 1.0 1.0 1.0 1.0 1.0 0.0 0.0]
   (map (get-account-minted ) (get-ledger)))
+
 
 (expect "k2:2 token balance for coin-buyer:"
  1.0
- (get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "coin-buyer"))
+ (get-balance "Kadcars#K2:6" "coin-buyer"))
 
 
  (expect "k2:2 token balance for john:"
   0.0
-  (get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "john"))
+  (get-balance "Kadcars#K2:6" "john"))
 
   (expect "k2:2 token balance for escrow:"
    0.0
-   (get-balance "Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
+
+   (get-balance "Kadcars#K2:6" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
 
 (rollback-tx)
+
+
+
+(free.kadcars-nft-policy.get-minted-tokens-for-collection "k:2")
+(free.kadcars-nft-policy.get-non-minted-tokens-for-collection "k:2")

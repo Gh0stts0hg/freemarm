@@ -83,21 +83,6 @@
 
 )
 
-  (defun create-k2-token (vin-number:string)
-
-    (let*
-      (
-        (vehicleSpec:object{vehicle-information} (read-msg "vehicle_spec"))
-        (make:string (at 'make vehicleSpec))
-        (model:string (at 'model vehicleSpec))
-
-        (token-id (get-kadcar-token-id vin-number make model))
-      )
-
-      (format "candidate token-id {}" [token-id])
-    )
-
-  )
 
 
 
@@ -146,6 +131,7 @@
             (ids:[string](read-msg "token-list"))
           )
           (map (mint-wrapper account guard) ids)
+          ids
         )
   )
 
@@ -156,6 +142,7 @@
       id:string
     )
       (mint-k2 id account guard)
+
   )
 
 
@@ -250,11 +237,12 @@
   )
 
   (defun get-kadcar-token-id (vin:string make:string model:string)
-    (format "{}#{}:{}" [make model (time-stamp vin)])
+    (format "{}#{}:{}" [make model vin])
   )
 
   (defun time-stamp:string (any-data)
-    (hash (+ (hash (at 'block-time (chain-data))) (hash any-data)))
+    (hash (+ (hash (at 'block-time (chain-data)))
+    (hash any-data)))
   )
 
 
