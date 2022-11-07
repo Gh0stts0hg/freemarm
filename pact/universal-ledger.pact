@@ -189,24 +189,16 @@
       s)
   )
 
-  (defun create-token:bool
-    ( id:string
-      precision:integer
-      manifest:object{manifest}
-      policy:module{free.universal-token-policy-v1}
-    )
-    (enforce-verify-manifest manifest)
-    (policy::enforce-init
-      { 'id: id, 'supply: 0.0, 'precision: precision, 'manifest: manifest })
-    (insert tokens id {
-      "id": id,
-      "precision": precision,
-      "manifest": manifest,
-      "supply": 0.0,
-      "policy": policy
-      })
-      (emit-event (TOKEN id precision 0.0 policy))
-  )
+;;  (defun create-token:bool
+;;    ( id:string
+;;      precision:integer
+;;      manifest:object{manifest}
+;;      policy:module{free.universal-token-policy-v1}
+;;    )
+
+      ;; Cross Chain accounting
+;;      (reserve-token-globally id precision (at 'chain-id (chain-data)))
+;;  )
 
   (defun truncate:decimal (id:string amount:decimal)
     (floor amount (precision id))
@@ -598,10 +590,205 @@
         balance
         )
       )
+
+
+
+
+
+
+
+
+      ;;;;;;;; CROSS CHAIN
+
+      (defschema crosschain-schema
+        @doc "Schema for yielded value in cross-chain transfers"
+        receiver:string
+        receiver-guard:guard
+        amount:decimal
+        token-info:object{policy-info}
+      )
+
+      (defschema crosschain-reservation-schema
+        @doc "Schema for yielded value in cross-chain transfers"
+        activate-chain:string
+        precision:integer
+        supply:decimal
+        token-id:string
+      )
+      (defschema test-created-schema
+        @doc "testing crosschain"
+        number:integer
+      )
+      (deftable token-reservations:{crosschain-reservation-schema})
+      (deftable test-created:{test-created-schema})
+      (defun get-created:integer
+        ( id:string)
+        (read test-created id)
+      )
+      (defun create-token-helper:object{crosschain-reservation-schema}
+        ( id:string
+          precision:integer
+          manifest:object{manifest}
+          policy:module{free.universal-token-policy-v1}
+        )
+        ;;enforce private
+        (enforce-verify-manifest manifest)
+        (policy::enforce-init
+          { 'id: id, 'supply: 0.0, 'precision: precision, 'manifest: manifest })
+        (insert tokens id {
+          "id": id,
+          "precision": precision,
+          "manifest": manifest,
+          "supply": 0.0,
+          "policy": policy
+          })
+        (test-increment-create id)
+        (emit-event (TOKEN id precision 0.0 policy))
+
+        (let*
+          (
+            (crosschain-details:object{crosschain-reservation-schema}
+            { "activate-chain" : (at 'chain-id (chain-data))
+            , "precision" : precision
+            , "supply" : 0.0
+            , "token-id": id
+            })
+          )
+          crosschain-details
+        )
+      )
+      (defun test-increment-create (id)
+
+        (with-default-read test-created id
+          { 'number : 0 }
+          { 'number := old-number }
+          (write test-created id
+            { "number" : (+ old-number 1)  })
+        )
+      )
+
+      (defpact create-token
+        ( id:string
+          precision:integer
+          manifest:object{manifest}
+          policy:module{free.universal-token-policy-v1}
+        )
+        (step
+            (let
+              (
+                (crosschain-details (create-token-helper id precision manifest policy))
+              )
+              (yield crosschain-details "0")
+            )
+
+        )
+        (step
+          (resume
+            { "active-chain" := activate-chain
+            , "precision" := precision
+            , "supply" := supply
+            , "token-id":= token-id
+            }
+            (insert token-reservations token-id {
+              "token-id": token-id,
+              "precision": precision,
+              "activate-chain": activate-chain,
+              "supply": supply
+              })
+
+          )
+        )
+      )
+
+      (defpact transfer-crosschain-test:string
+        ( sender:string
+          receiver:string
+          receiver-guard:guard
+          target-chain:string
+          token-id:string
+          amount:decimal )
+
+        @model [ (property (> amount 0.0))
+                 (property (valid-account sender))
+                 (property (valid-account receiver))
+               ]
+
+        (step
+          (with-capability (DEBIT sender)
+            (enforce (!= "" target-chain) "empty target-chain")
+            (enforce (!= (at 'chain-id (chain-data)) target-chain)
+              "cannot run cross-chain transfers to the same chain")
+
+            (enforce (> amount 0.0)
+              "transfer quantity must be positive")
+
+            (enforce-unit amount)
+
+            ;; step 1 - debit delete-account on current chain
+            (debit token-id sender amount)
+            (let*
+
+              (
+                (token-info (get-policy-info token-id))
+                (crosschain-details:object{crosschain-schema}
+                { "receiver" : receiver
+                , "receiver-guard" : receiver-guard
+                , "amount" : amount
+                , "token-info": token-info
+                , "crosschain":true
+                })
+              )
+              (yield crosschain-details target-chain)
+              )))
+
+        (step
+          (resume
+            { "receiver" := receiver
+            , "receiver-guard" := receiver-guard
+            , "amount" := amount
+            , "token-info":= token-info
+            , "crosschain":= crosschain
+            }
+            ;; step 2 - credit create account on target chain
+            (let*
+                (
+                  (token (at "token" token-info))
+                  (token-id (at "id" token))
+                  (policy:module{free.universal-token-policy-v1} (at "policy" token-info))
+                  (manifest (at "manifest" token))
+                  (precision (at "precision" token))
+                  (supply (at "supply" token))
+                )
+
+                (enforce-verify-manifest manifest)
+                ;; POLICY to know if its cross chain create via flag
+                ;; ONLY create if no token exists on target chain
+                (policy::enforce-init
+                  { 'id: token-id, 'supply: 0.0, 'precision: precision, 'manifest: manifest })
+                (insert tokens token-id {
+                  "id": token-id,
+                  "precision": precision,
+                  "manifest": manifest,
+                  "supply": 0.0,
+                  "policy": policy
+                  })
+                (emit-event (TOKEN token-id precision 0.0 policy))
+                ;; CREDIT ACCOUNT
+                (with-capability (CREDIT receiver)
+                  (credit token-id receiver receiver-guard amount)
+                ))
+
+            )
+
+          )
+
+        )
 )
+
 
 
 (if (read-msg 'upgrade)
   ["upgrade complete"]
   [ (create-table ledger)
+    (create-table test-created)
     (create-table tokens) ])

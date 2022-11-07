@@ -78,7 +78,7 @@
       (get-k2-manifest vin) free.kadcars-nft-policy))
     )
 
-    (format "created token {}" [final-token-id])
+    (format "created token" [])
   )
 
 )

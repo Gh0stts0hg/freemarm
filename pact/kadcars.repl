@@ -125,7 +125,7 @@
   (free.kadcars-nft-policy.create-collection))
 
 (expect "Create token K2#1"
-  "created token true"
+  "created token"
   (free.kadcar-factory.create-k2))
 
   (env-sigs
@@ -219,7 +219,7 @@
 (use free.kadcar-factory)
 
 (expect "Create token Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA"
-  "created token true"
+  "created token"
   (free.kadcar-factory.create-k2))
 ;  (create-token "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1
 ;    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) free.kadcars-nft-policy))
@@ -388,8 +388,9 @@
 
 (coin.create-account 'john (read-keyset 'john-guard))
 
-(expect "Create token K2#1"
-  "created token true"
+
+(expect "Create token K2#3"
+  "created token"
   (free.kadcar-factory.create-k2))
 
 
@@ -452,8 +453,8 @@
     ,'caps:[]
      }])
 
-(expect "Create token K2#1"
-  "created token true"
+(expect "Create token K2#4"
+  "created token"
   (free.kadcar-factory.create-k2))
 
 
@@ -510,9 +511,12 @@
 
 
 (expect "Create token Kadcars#K2:5"
-  "created token true"
+  "created token"
   (free.kadcar-factory.create-k2))
+(commit-tx)
 
+
+(begin-tx)
 (env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
 
 'token_spec: {
@@ -533,7 +537,7 @@
 
 
 (expect "Create token Kadcars#K2:6"
-  "created token true"
+  "created token"
   (free.kadcar-factory.create-k2))
 
 (expect "minted bulk"
@@ -547,10 +551,10 @@
 (expect "k2:2 token balance for john token 1.0"
   1.0
   (free.universal-ledger.get-balance "Kadcars#K2:6" "john"))
-
+(commit-tx)
 
 ;;;;; CREATING TOKEN TO TEST NON_MINTED_TOKENS RETRIEVAL
-
+(begin-tx)
   (env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
 
   'token_spec: {
@@ -569,14 +573,53 @@
     ,'model: "K2"
   }})
 
-(expect "Create token K2#1"
-  "created token true"
+(expect "Create token K2#7"
+  "created token"
 
   (free.kadcar-factory.create-k2))
 
-
-
 (commit-tx)
+
+
+
+;;;;; CREATING TOKEN TO TEST CROSS CHAIN RESERVATION
+(env-chain-data {"chain-id":"1"})
+(begin-tx)
+  (env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
+
+  'token_spec: {
+    'fungible: coin
+    ,'creator: "creator"
+    ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+    ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+    ,'royalty-rate: 0.03
+    ,'collection-id:"k:2"
+    ,'owner: "creator"
+  },
+  'token-list:["Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"],
+  'vehicle_spec: {
+    'vin: "8"
+    ,'make: "Kadcars"
+    ,'model: "K2"
+  }})
+
+(expect "Create token K2#8"
+  "created token"
+
+  (free.kadcar-factory.create-k2))
+(commit-tx)
+(begin-tx)
+(use kip.token-manifest)
+
+(env-chain-data {"chain-id":"2"})
+(env-chain-data {"chain-id":"TestNet00/12"})
+(free.universal-ledger.get-created "Kadcars#K2:8")
+(expect-failure "Token name reserved"
+  "row found for key"
+  (free.kadcar-factory.create-k2))
+(free.universal-ledger.get-created "Kadcars#K2:8")
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; BELOW RATE ADJUSTED ROYALTY OFFER AND BUYING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
