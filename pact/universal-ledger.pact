@@ -1,4 +1,6 @@
 (namespace "free")
+(define-keyset "free.universal-admin"  (read-keyset 'marmalade-admin))
+
 (module universal-ledger GOVERNANCE
 
   @model
@@ -10,8 +12,8 @@
   (use util.fungible-util)
   (use kip.token-manifest)
 
-  (implements free.universal-poly-fungible-v2)
-  (use free.universal-poly-fungible-v2 [account-details sender-balance-change receiver-balance-change])
+  (implements free.universal-poly-fungible-v4)
+  (use free.universal-poly-fungible-v4 [account-details sender-balance-change receiver-balance-change])
 
   ;;
   ;; Tables/Schemas
@@ -24,7 +26,7 @@
     manifest:object{manifest}
     precision:integer
     supply:decimal
-    policy:module{free.universal-token-policy-v1}
+    policy:module{free.universal-token-policy-v4}
   )
 
   (deftable tokens:{token-schema})
@@ -79,7 +81,7 @@
     @event true
   )
 
-  (defcap TOKEN:bool (id:string precision:integer supply:decimal policy:module{free.universal-token-policy-v1})
+  (defcap TOKEN:bool (id:string precision:integer supply:decimal policy:module{free.universal-token-policy-v4})
     @event
     true
   )
@@ -93,6 +95,15 @@
     @doc " For accounting via events. \
          \ sender = {account: '', previous: 0.0, current: 0.0} for mint \
          \ receiver = {account: '', previous: 0.0, current: 0.0} for burn"
+    @event
+    true
+  )
+  (defcap MOD:bool
+    ( account:string
+      token-id:string
+      transformation-list:list
+    )
+    @doc " For accounting via events."
     @event
     true
   )
@@ -114,6 +125,10 @@
 
   (defcap DEBIT (id:string sender:string)
     (enforce-guard (account-guard id sender))
+  )
+
+  (defcap MOD-MANIFEST (id:string owner:string)
+    (enforce-guard (account-guard id owner))
   )
 
   (defun account-guard:guard (id:string account:string)
@@ -146,13 +161,13 @@
   )
 
   (defschema policy-info
-    policy:module{free.universal-token-policy-v1}
-    token:object{free.universal-token-policy-v1.token-info}
+    policy:module{free.universal-token-policy-v4}
+    token:object{free.universal-token-policy-v4.token-info}
   )
 
   (defun get-policy-info:object{policy-info} (id:string)
     (with-read tokens id
-      { 'policy := policy:module{free.universal-token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v4}
       , 'supply := supply
       , 'precision := precision
       , 'manifest := manifest
@@ -193,7 +208,7 @@
     ( id:string
       precision:integer
       manifest:object{manifest}
-      policy:module{free.universal-token-policy-v1}
+      policy:module{free.universal-token-policy-v4}
     )
     (enforce-verify-manifest manifest)
     (policy::enforce-init
@@ -262,7 +277,7 @@
       amount:decimal
     )
     (bind (get-policy-info id)
-      { 'policy := policy:module{free.universal-token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v4}
       , 'token := token }
       (policy::enforce-transfer token sender (account-guard id sender) receiver amount))
   )
@@ -298,7 +313,7 @@
     )
     (with-capability (MINT id account amount)
       (bind (get-policy-info id)
-        { 'policy := policy:module{free.universal-token-policy-v1}
+        { 'policy := policy:module{free.universal-token-policy-v4}
         , 'token := token }
         (policy::enforce-mint token account guard amount))
       (let
@@ -320,7 +335,7 @@
     )
     (with-capability (BURN id account amount)
       (bind (get-policy-info id)
-        { 'policy := policy:module{free.universal-token-policy-v1}
+        { 'policy := policy:module{free.universal-token-policy-v4}
         , 'token := token }
         (policy::enforce-burn token account amount))
       (let
@@ -370,6 +385,7 @@
            ]
     (enforce-valid-account account)
     (enforce-unit id amount)
+
 
     (require-capability (CREDIT id account))
 
@@ -501,7 +517,7 @@
     )
     (step-with-rollback
       (with-capability (SALE id seller amount timeout (pact-id))
-        (offer id seller amount))
+        (offer id seller amount timeout))
       (with-capability (WITHDRAW id seller amount timeout (pact-id))
         (withdraw id seller amount))
     )
@@ -512,17 +528,19 @@
           (buy id seller buyer buyer-guard amount (pact-id)))))
   )
 
+
   (defun offer:bool
     ( id:string
       seller:string
       amount:decimal
+      timeout:integer
     )
     @doc "Initiate sale with by SELLER by escrowing AMOUNT of TOKEN until TIMEOUT."
     (require-capability (SALE_PRIVATE (pact-id)))
     (bind (get-policy-info id)
-      { 'policy := policy:module{free.universal-token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v4}
       , 'token := token }
-      (policy::enforce-offer token seller amount (pact-id)))
+      (policy::enforce-offer token seller amount (pact-id) timeout))
     (let
       (
         (sender (debit id seller amount))
@@ -560,7 +578,7 @@
     @doc "Complete sale with transfer."
     (require-capability (SALE_PRIVATE (pact-id)))
     (bind (get-policy-info id)
-      { 'policy := policy:module{free.universal-token-policy-v1}
+      { 'policy := policy:module{free.universal-token-policy-v4}
       , 'token := token }
       (policy::enforce-buy token seller buyer buyer-guard amount sale-id))
     (let
@@ -572,32 +590,119 @@
       (emit-event (RECONCILE id amount sender receiver)))
   )
 
-  (defun sale-active:bool (timeout:integer)
-    @doc "Sale is active until TIMEOUT block height."
-    (< (at 'block-height (chain-data)) timeout)
-  )
+    (defun sale-active:bool (timeout:integer)
+      @doc "Sale is active until TIMEOUT block height."
+      (< (at 'block-height (chain-data)) timeout)
+    )
 
-  (defun sale-account:string ()
-    (create-principal (create-pact-guard "SALE"))
-  )
-
-
-  ;;;TESTING ONLY
+    (defun sale-account:string ()
+      (create-principal (create-pact-guard "SALE"))
+    )
 
     (defun get-ledger:guard ()
-    ;;(enforce-guard (keyset-ref-guard 'kc-admin))
       (keys ledger)
     )
 
     (defun get-account-minted:integer (account:string)
-    ;;(enforce-guard (keyset-ref-guard 'kc-admin))
-
         (with-default-read ledger account
           {"balance": 0}
           {"balance":= balance}
         balance
         )
       )
+
+  ;;;;;;;;;TESTING ONLY
+
+  (defun get-tokens-for-id (token-id:string)
+    (at 'token (get-policy-info token-id))
+  )
+  (defun mint-atrium-bulk:bool
+    ( ids:[string]
+      account:string
+      guard:guard
+    )
+    (with-capability (GOVERNANCE)
+
+      (let*
+        (
+          (token-list:list (map (get-tokens-for-id) ids))
+        )
+        (enforce-unified-policy ids)
+        (bind (get-policy-info (at 0 ids))
+          { 'policy := policy:module{free.universal-token-policy-v4}
+          , 'token := token }
+          (policy::enforce-mint-bulk token-list account guard))
+        (map (mint-atrium account guard 1.0) ids)
+      ))
+  )
+  (defun enforce-unified-policy (ids[string])
+    (let*
+      (
+        (init-token-policy:module{free.universal-token-policy-v4} (at 'policy (get-policy-info (at 0 ids))))
+        (token-list (map (get-policy-info) ids))
+        (token-policies:[module{free.universal-token-policy-v4}] (map (at 'policy) token-list))
+      )
+      (map (enforce-equal init-token-policy ) token-policies)
+    )
+
+  )
+  (defun enforce-equal (policy:module{free.universal-token-policy-v4} rhs)
+    (enforce (= policy rhs) "Policies not uniform")
+  )
+  ;;;;;;;;;TESTING ONLY
+  (defun mint-atrium:bool
+    (
+      account:string
+      guard:guard
+      amount:decimal
+      id:string
+    )
+    (with-capability (GOVERNANCE)
+      (with-capability (MINT id account amount)
+        (let
+          (
+            (receiver (credit id account guard amount))
+            (sender:object{sender-balance-change}
+              {'account: "", 'previous: 0.0, 'current: 0.0})
+          )
+          (emit-event (RECONCILE id amount sender receiver))
+          (update-supply id amount)
+        ))
+  ))
+
+    (defun modify-token:bool
+      ( id:string
+        guard:guard
+        account:string
+        transformation-list:list
+      )
+      @doc "Modify a token manifest."
+
+      (with-default-read ledger (key id account)
+        { "balance" : -1.0, "guard" : "", "account": "-"}
+        { "balance" := old-bal, "guard" := retg, "account" := owner-account}
+        (with-capability (MOD-MANIFEST id owner-account)
+          (enforce (= retg guard) "Guards do not match.")
+
+          (bind (get-policy-info id)
+            { 'policy := policy:module{free.universal-token-policy-v4}
+            , 'token := token }
+            (enforce (> old-bal 0.0) "You must own the token to modify!")
+            (enforce (= old-bal (at 'supply token)) "You must own the token entirely to modify!")
+            ;;policy should enforce max supply for poly fungible NFTs
+            (policy::enforce-mod token transformation-list)
+          )
+          (let*
+            (
+              (manifest:object{manifest} (get-manifest id))
+              (new-manifest (free.upgrade-utils.upgrade-and-version manifest transformation-list id))
+            )
+            (update tokens id {'manifest: new-manifest })
+            (emit-event (MOD account id transformation-list))
+          )
+        )
+      )
+    )
 )
 
 

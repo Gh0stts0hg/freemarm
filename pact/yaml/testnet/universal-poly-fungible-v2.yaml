@@ -1,0 +1,13 @@
+codeFile: ../../kip/universal-poly-fungible-v2.pact
+signers:
+  - public: 2c5d610e0030bece85f28be9c2153b0806ae2b743e445e32ff1758203ca9d455
+data:
+  ns: "kip"
+networkId: testnet04
+nonce: "install kip.poly-fungible-v2"
+publicMeta:
+  chainId: "0"
+  sender: "2c5d610e0030bece85f28be9c2153b0806ae2b743e445e32ff1758203ca9d455"
+  gasLimit: 15000
+  gasPrice: 0.0000001
+  ttl: 600

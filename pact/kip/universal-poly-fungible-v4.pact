@@ -1,7 +1,7 @@
 
 (namespace "free")
 
-(interface universal-poly-fungible-v2
+(interface universal-poly-fungible-v4
 
   (defschema account-details
     @doc
@@ -68,7 +68,7 @@
     @event
   )
 
-  (defcap TOKEN:bool (id:string precision:integer supply:decimal policy:module{free.universal-token-policy-v1})
+  (defcap TOKEN:bool (id:string precision:integer supply:decimal policy:module{free.universal-token-policy-v4})
     @doc " Emitted when token ID is created."
     @event
   )

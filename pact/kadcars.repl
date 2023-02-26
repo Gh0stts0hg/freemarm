@@ -14,8 +14,8 @@
 
 (load "kip/account-protocols-v1.pact")
 (load "kip/manifest.pact")
-(load "kip/universal-token-policy-v1.pact")
-(load "kip/universal-poly-fungible-v2.pact")
+(load "kip/universal-token-policy-v4.pact")
+(load "kip/universal-poly-fungible-v4.pact")
 
 (define-namespace 'util (sig-keyset) (sig-keyset))
 (load "util/fungible-util.pact")
@@ -33,14 +33,19 @@
     ,'caps: []
     }])
 
+(load "upgrade-provider.pact")
+(load "upgrade-utils.pact")
 (load "universal-ledger.pact")
-(load "kadcars-nft-policy.pact")
+(load "kadcars-nft-policy-2.pact")
 (load "kadcar-factory.pact")
+(load "fixed-quote-royalty-policy.pact")
 
 
 (commit-tx)
 
 (begin-tx "creating accounts")
+
+
 
 
 (env-data {"bob": {"keys": ["bob"], "pred": "keys-all"}})
@@ -59,37 +64,678 @@
 (coin.create-account 'coin-buyer (read-keyset 'coin-buyer))
 
 (commit-tx)
-;;;;;;; create and Mint first Kadcar NFT ;;;;;;;
 
-(begin-tx "Create & Mint first Kadcar K#1")
+
+;;;;;; TESTING BULK CREATE
+
+
+;;;;;;; create and Mint BULK ;;;;;;;
+
+(begin-tx "Create BULK")
 (env-hash (hash "create-and-mint"))
 (env-data {
    'upgrade: false
+  ,'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5: {"keys": ["f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  , "bob": {"keys": ["bob"], "pred": "keys-all"}
+  ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
+  ,'admin-guard: {"keys": ["bob"], "pred": "keys-all"}
   ,'ns: "marmalade"
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
 
-  ,'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5: {"keys": ["f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"], "pred": "keys-all"}
-
-  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
-
-  , "bob": {"keys": ["bob"], "pred": "keys-all"}
-  ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
-  ,'admin-guard: {"keys": ["bob"], "pred": "keys-all"}
   ,'token_spec: {
     'fungible: coin
     ,'creator: "creator"
     ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-    ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
     ,'royalty-rate: 0.03
     ,'owner: "creator"
     ,'collection-id: "k:2"
   }
-  ,'vehicle_spec: {
-    'vin: "1"
-    ,'make: "Kadcars"
-    ,'model: "K2"
-  }
+  ,'specs : [
+    {
+      'vehicle_spec:
+      {
+      'webp-ipfs:"url"
+      ,"vehicle-information" : {
+        "vin": "11111",
+        "make": "Kadcars",
+        "model": "K2"
+    }
+      ,'mutable-state: {
+        "components": [
+            {
+                "name": "body",
+                "stats": [
+                    {
+                        "key": "body-type",
+                        "val": ""
+                    },
+                    {
+                        "key": "body-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "trim-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "hood-trim-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "grill-inner-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "grill-outer-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "seats-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "emblem-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "headlights-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "max-length",
+                        "val": {
+                            "value": 0.0,
+                            "unit": ""
+                        }
+                    },
+                    {
+                        "key": "max-height",
+                        "val": {
+                            "value": 0.0,
+                            "unit": ""
+                        }
+                    },
+                    {
+                        "key": "max-width",
+                        "val": {
+                            "value": 0.0,
+                            "unit": ""
+                        }
+                    },
+                    {
+                        "key": "wheel-base",
+                        "val": {
+                            "value": 0.0,
+                            "unit": ""
+                        }
+                    },
+                    {
+                        "key": "ground-clearance",
+                        "val": {
+                            "value": 0.0,
+                            "unit": ""
+                        }
+                    },
+                    {
+                        "key": "weight",
+                        "val": {
+                            "value": 0.0,
+                            "unit": ""
+                        }
+                    },
+                    {
+                        "key": "aerodynamic-factor",
+                        "val": {
+                            "value": 0.1,
+                            "unit": "%"
+                        }
+                    },
+                    {
+                        "key": "downforce",
+                        "val": {
+                            "value": 0.1,
+                            "unit": "%"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "wheel",
+                "stats": [
+                    {
+                        "key": "wheel-type",
+                        "val": "offroad"
+                    },
+                    {
+                        "key": "rim-type",
+                        "val": ""
+                    },
+                    {
+                        "key": "rim-material",
+                        "val": {
+                            "type": "",
+                            "id": ""
+                        }
+                    },
+                    {
+                        "key": "size",
+                        "val": {
+                            "value": "391/50 R 23",
+                            "unit": "<width>/<height/width> R <rim diameter>"
+                        }
+                    },
+                    {
+                        "key": "weight",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "kg"
+                        }
+                    },
+                    {
+                        "key": "braking-power",
+                        "val": {
+                            "value": 70.0,
+                            "unit": "%"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "power-unit",
+                "stats": [
+                    {
+                        "key": "power-units",
+                        "val": [
+                            {
+                                "unit-type": "v6 3.5 liter",
+                                "weight": {
+                                    "value": 185.0,
+                                    "unit": "kg"
+                                },
+                                "horse-power": {
+                                    "value": 340.0,
+                                    "unit": "hp"
+                                },
+                                "range": {
+                                    "value": 375.0,
+                                    "unit": "km"
+                                },
+                                "torque": {
+                                    "value": 372.0,
+                                    "unit": "nm@4800 rpm"
+                                }
+                            },
+                            {
+                                "unit-type": "electric motor",
+                                "weight": {
+                                    "value": 92.0,
+                                    "unit": "kg"
+                                },
+                                "horse-power": {
+                                    "value": 207.0,
+                                    "unit": "hp"
+                                },
+                                "range": {
+                                    "value": 65.0,
+                                    "unit": "km"
+                                },
+                                "torque": {
+                                    "value": 350.0,
+                                    "unit": "nm"
+                                }
+                            },
+                            {
+                                "unit-type": "electric motor",
+                                "weight": {
+                                    "value": 92.0,
+                                    "unit": "kg"
+                                },
+                                "horse-power": {
+                                    "value": 207.0,
+                                    "unit": "hp"
+                                },
+                                "range": {
+                                    "value": 65.0,
+                                    "unit": "km"
+                                },
+                                "torque": {
+                                    "value": 350.0,
+                                    "unit": "nm"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "drive-train",
+                "stats": [
+                    {
+                        "key": "drive-train",
+                        "val": [
+                            {
+                                "drive-train-type": "4WD"
+                            },
+                            {
+                                "transmission-type": "automatic",
+                                "gears": "8 speed"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "derived-stats",
+                "stats": [
+                    {
+                        "key": "top-speed",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "km/h"
+                        }
+                    },
+                    {
+                        "key": "acceleration",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "s"
+                        }
+                    },
+                    {
+                        "key": "weight",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "kg"
+                        }
+                    },
+                    {
+                        "key": "aerodynamic-factor",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "%"
+                        }
+                    },
+                    {
+                        "key": "downforce",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "%"
+                        }
+                    },
+                    {
+                        "key": "handling",
+                        "val": {
+                            "value": 0.0,
+                            "unit": "%"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "background",
+                "stats": [
+                    {
+                        "key": "name",
+                        "val": ""
+                    }
+                ]
+            }
+        ]
+    }
+       ,'view-refs:{
+          "data":"ipfs/url",
+          "scheme":"ipfs"
+         }
+       }
+         },
+
+      {
+        'vehicle_spec: {
+          'webp-ipfs:"url"
+          ,'vehicle-information : {
+            'vin: "22222"
+            ,'make: "Kadcars"
+            ,'model: "K2"
+        }
+        ,'mutable-state: {
+          "components": [
+              {
+                  "name": "body",
+                  "stats": [
+                      {
+                          "key": "body-type",
+                          "val": ""
+                      },
+                      {
+                          "key": "body-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "trim-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "hood-trim-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "grill-inner-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "grill-outer-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "seats-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "emblem-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "headlights-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "max-length",
+                          "val": {
+                              "value": 0.0,
+                              "unit": ""
+                          }
+                      },
+                      {
+                          "key": "max-height",
+                          "val": {
+                              "value": 0.0,
+                              "unit": ""
+                          }
+                      },
+                      {
+                          "key": "max-width",
+                          "val": {
+                              "value": 0.0,
+                              "unit": ""
+                          }
+                      },
+                      {
+                          "key": "wheel-base",
+                          "val": {
+                              "value": 0.0,
+                              "unit": ""
+                          }
+                      },
+                      {
+                          "key": "ground-clearance",
+                          "val": {
+                              "value": 0.0,
+                              "unit": ""
+                          }
+                      },
+                      {
+                          "key": "weight",
+                          "val": {
+                              "value": 0.0,
+                              "unit": ""
+                          }
+                      },
+                      {
+                          "key": "aerodynamic-factor",
+                          "val": {
+                              "value": 0.1,
+                              "unit": "%"
+                          }
+                      },
+                      {
+                          "key": "downforce",
+                          "val": {
+                              "value": 0.1,
+                              "unit": "%"
+                          }
+                      }
+                  ]
+              },
+              {
+                  "name": "wheel",
+                  "stats": [
+                      {
+                          "key": "wheel-type",
+                          "val": "offroad"
+                      },
+                      {
+                          "key": "rim-type",
+                          "val": ""
+                      },
+                      {
+                          "key": "rim-material",
+                          "val": {
+                              "type": "",
+                              "id": ""
+                          }
+                      },
+                      {
+                          "key": "size",
+                          "val": {
+                              "value": "391/50 R 23",
+                              "unit": "<width>/<height/width> R <rim diameter>"
+                          }
+                      },
+                      {
+                          "key": "weight",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "kg"
+                          }
+                      },
+                      {
+                          "key": "braking-power",
+                          "val": {
+                              "value": 70.0,
+                              "unit": "%"
+                          }
+                      }
+                  ]
+              },
+              {
+                  "name": "power-unit",
+                  "stats": [
+                      {
+                          "key": "power-units",
+                          "val": [
+                              {
+                                  "unit-type": "v6 3.5 liter",
+                                  "weight": {
+                                      "value": 185.0,
+                                      "unit": "kg"
+                                  },
+                                  "horse-power": {
+                                      "value": 340.0,
+                                      "unit": "hp"
+                                  },
+                                  "range": {
+                                      "value": 375.0,
+                                      "unit": "km"
+                                  },
+                                  "torque": {
+                                      "value": 372.0,
+                                      "unit": "nm@4800 rpm"
+                                  }
+                              },
+                              {
+                                  "unit-type": "electric motor",
+                                  "weight": {
+                                      "value": 92.0,
+                                      "unit": "kg"
+                                  },
+                                  "horse-power": {
+                                      "value": 207.0,
+                                      "unit": "hp"
+                                  },
+                                  "range": {
+                                      "value": 65.0,
+                                      "unit": "km"
+                                  },
+                                  "torque": {
+                                      "value": 350.0,
+                                      "unit": "nm"
+                                  }
+                              },
+                              {
+                                  "unit-type": "electric motor",
+                                  "weight": {
+                                      "value": 92.0,
+                                      "unit": "kg"
+                                  },
+                                  "horse-power": {
+                                      "value": 207.0,
+                                      "unit": "hp"
+                                  },
+                                  "range": {
+                                      "value": 65.0,
+                                      "unit": "km"
+                                  },
+                                  "torque": {
+                                      "value": 350.0,
+                                      "unit": "nm"
+                                  }
+                              }
+                          ]
+                      }
+                  ]
+              },
+              {
+                  "name": "drive-train",
+                  "stats": [
+                      {
+                          "key": "drive-train",
+                          "val": [
+                              {
+                                  "drive-train-type": "4WD"
+                              },
+                              {
+                                  "transmission-type": "automatic",
+                                  "gears": "8 speed"
+                              }
+                          ]
+                      }
+                  ]
+              },
+              {
+                  "name": "derived-stats",
+                  "stats": [
+                      {
+                          "key": "top-speed",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "km/h"
+                          }
+                      },
+                      {
+                          "key": "acceleration",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "s"
+                          }
+                      },
+                      {
+                          "key": "weight",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "kg"
+                          }
+                      },
+                      {
+                          "key": "aerodynamic-factor",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "%"
+                          }
+                      },
+                      {
+                          "key": "downforce",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "%"
+                          }
+                      },
+                      {
+                          "key": "handling",
+                          "val": {
+                              "value": 0.0,
+                              "unit": "%"
+                          }
+                      }
+                  ]
+              },
+              {
+                  "name": "background",
+                  "stats": [
+                      {
+                          "key": "name",
+                          "val": ""
+                      }
+                  ]
+              }
+          ]
+      }
+       ,'view-refs:{
+          "data":"ipfs/url",
+          "scheme":"ipfs"
+         }}
+       }
+
+       ]
   ,'collection-unique-supply:1337
   ,'collection-id:"k:2"
   })
@@ -122,16 +768,409 @@
 (coin.create-account "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" (read-keyset 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5))
 (expect "Created collection"
   true
-  (free.kadcars-nft-policy.create-collection))
+  (free.kadcars-nft-policy-2.create-collection))
+
+(expect "Create BULKS"
+  [true true]
+  (free.kadcar-factory.create-k2s-bulk))
+
+  (free.kadcars-nft-policy-2.get-non-minted-tokens-for-collection "k:2")
+
+(free.universal-ledger.get-manifest "Kadcars#K2:22222")
+(free.universal-ledger.get-manifest "Kadcars#K2:11111")
+
+(rollback-tx)
+
+;;; TESTING BULK CREATE END
+
+
+
+
+;;;;;;; create and Mint first Kadcar NFT ;;;;;;;
+
+(begin-tx "Create & Mint first Kadcar K#1")
+(env-hash (hash "create-and-mint"))
+
+(env-data
+  {
+   'upgrade: false
+  ,'ns: "marmalade"
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+
+  ,'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5: {"keys": ["f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"], "pred": "keys-all"}
+
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+
+  , "bob": {"keys": ["bob"], "pred": "keys-all"}
+  ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
+  ,'admin-guard: {"keys": ["bob"], "pred": "keys-all"}
+  ,'token_spec: {
+    'fungible: coin
+    ,'creator: "creator"
+    ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+    ,'royalty-rate: 0.03
+    ,'owner: "creator"
+    ,'collection-id: "k:2"
+  }
+  ,'vehicle_spec: {
+
+	"webp-ipfs": "",
+	"vehicle-information": {
+		"vin": "1",
+		"make": "Kadcars",
+		"model": "K:2"
+	},
+	"mutable-state": {
+		"components": [{
+			"name": "body",
+			"stats": [{
+				"key": "body-type",
+				"val": "K:2"
+			}, {
+				"key": "body-material",
+				"val": {
+					"type": "material",
+					"id": "Matte Metallic-Ultraviolet"
+				}
+			}, {
+				"key": "trim-material",
+				"val": {
+					"type": "material",
+					"id": "Steel Wolf"
+				}
+			}, {
+				"key": "hood-trim-material",
+				"val": {
+					"type": "material",
+					"id": "matte metallic-darkgray"
+				}
+			}, {
+				"key": "grill-inner-material",
+				"val": {
+					"type": "material",
+					"id": "matte-black"
+				}
+			}, {
+				"key": "grill-outer-material",
+				"val": {
+					"type": "material",
+					"id": "matte-black"
+				}
+			}, {
+				"key": "headlight-panels",
+				"val": {
+					"type": "texture",
+					"id": "Carbon Fiber"
+				}
+			}, {
+				"key": "seats-material",
+				"val": {
+					"type": "material",
+					"id": "matte-lightgray"
+				}
+			}, {
+				"key": "emblem-material",
+				"val": {
+					"type": "material",
+					"id": "matte metallic-purple"
+				}
+			}, {
+				"key": "headlights-material",
+				"val": {
+					"type": "material",
+					"id": "white"
+				}
+			}, {
+				"key": "max-length",
+				"val": {
+					"value": 5.12352,
+					"unit": "m"
+				}
+			}, {
+				"key": "max-height",
+				"val": {
+					"value": 2.08889,
+					"unit": "m"
+				}
+			}, {
+				"key": "max-width",
+				"val": {
+					"value": 2.49419,
+					"unit": "m"
+				}
+			}, {
+				"key": "wheel-base",
+				"val": {
+					"value": 2.82967,
+					"unit": "m"
+				}
+			}, {
+				"key": "ground-clearance",
+				"val": {
+					"value": 0.297131,
+					"unit": "m"
+				}
+			}, {
+				"key": "weight",
+				"val": {
+					"value": 1600.0,
+					"unit": "kg"
+				}
+			}, {
+				"key": "aerodynamic-factor",
+				"val": {
+					"value": 70.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "downforce",
+				"val": {
+					"value": 50.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "handling",
+				"val": {
+					"value": 65.0,
+					"unit": "%"
+				}
+			}]
+		}, {
+			"name": "wheel",
+			"stats": [{
+				"key": "wheel-type",
+				"val": "offroad"
+			}, {
+				"key": "rim-type",
+				"val": "Core"
+			}, {
+				"key": "wheel-units",
+				"val": 4.0
+			}, {
+				"key": "rim-material",
+				"val": {
+					"type": "material",
+					"id": "matte-maroon"
+				}
+			}, {
+				"key": "size",
+				"val": {
+					"value": "391/50 R 23",
+					"unit": "<width>/<height/width> R <rim diameter>"
+				}
+			}, {
+				"key": "weight",
+				"val": {
+					"value": 156.0,
+					"unit": "kg"
+				}
+			}, {
+				"key": "braking-power",
+				"val": {
+					"value": 70.0,
+					"unit": "%"
+				}
+			}]
+		}, {
+			"name": "power-unit",
+			"stats": [{
+				"key": "power-units",
+				"val": [{
+					"unit-type": "v6 3.5 liter",
+					"weight": {
+						"value": 185.0,
+						"unit": "kg"
+					},
+					"horse-power": {
+						"value": 340.0,
+						"unit": "hp"
+					},
+					"range": {
+						"value": 375.0,
+						"unit": "km"
+					},
+					"torque": {
+						"value": 372.0,
+						"unit": "nm@4800 rpm"
+					}
+				}, {
+					"unit-type": "electric motor",
+					"weight": {
+						"value": 92.0,
+						"unit": "kg"
+					},
+					"horse-power": {
+						"value": 207.0,
+						"unit": "hp"
+					},
+					"range": {
+						"value": 65.0,
+						"unit": "km"
+					},
+					"torque": {
+						"value": 350.0,
+						"unit": "nm"
+					}
+				}, {
+					"unit-type": "electric motor",
+					"weight": {
+						"value": 92.0,
+						"unit": "kg"
+					},
+					"horse-power": {
+						"value": 207.0,
+						"unit": "hp"
+					},
+					"range": {
+						"value": 65.0,
+						"unit": "km"
+					},
+					"torque": {
+						"value": 350.0,
+						"unit": "nm"
+					}
+				}]
+			}]
+		}, {
+			"name": "drive-train",
+			"stats": [{
+				"key": "drive-train",
+				"val": [{
+					"drive-train-type": "4WD"
+				}, {
+					"transmission-type": "automatic",
+					"gears": "8 speed"
+				}]
+			}]
+		}, {
+			"name": "derived-stats",
+			"stats": [{
+				"key": "top-speed",
+				"val": {
+					"value": 258.4890330828,
+					"unit": "km/h"
+				}
+			}, {
+				"key": "acceleration",
+				"val": {
+					"value": 3.6,
+					"unit": "s"
+				}
+			}, {
+				"key": "weight",
+				"val": {
+					"value": 2130.8,
+					"unit": "kg"
+				}
+			}, {
+				"key": "aerodynamic-factor",
+				"val": {
+					"value": 71.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "downforce",
+				"val": {
+					"value": 59.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "handling",
+				"val": {
+					"value": 74.0,
+					"unit": "%"
+				}
+			}]
+		}, {
+			"name": "background",
+			"stats": [{
+				"key": "name",
+				"val": "Kadena Beach"
+			}]
+		}, {
+			"name": "spoiler",
+			"stats": [{
+				"key": "spoiler-type",
+				"val": "Victory Wing"
+			}, {
+				"key": "handling",
+				"val": {
+					"value": 9.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "downforce",
+				"val": {
+					"value": 9.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "aerodynamic-factor",
+				"val": {
+					"value": 1.0,
+					"unit": "%"
+				}
+			}, {
+				"key": "weight",
+				"val": {
+					"value": 5.8,
+					"unit": "kg"
+				}
+			}]
+		}]
+	},
+	"view-refs": {
+		"data": "",
+		"scheme": "ipfs://"
+	}
+}
+  ,'collection-unique-supply:1337
+  ,'collection-id:"k:2"
+  })
+(env-sigs
+  [{'key:'dummy
+   ,'caps:
+    [(free.universal-ledger.MINT "K2#1" "bob" 1.0)
+     ]},
+   { 'key: 'marmalade-admin
+    ,'caps:[]
+     },
+   { 'key: 'bob
+    ,'caps:[]
+     }
+     ,
+     { 'key: 'creator
+      ,'caps:[]
+       },
+       { 'key: 'bob
+        ,'caps:[]
+         },
+     { 'key: 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5
+      ,'caps:[]
+       }
+   ])
+
+(use kip.token-manifest)
+(use free.universal-ledger)
+(coin.create-account "creator" (read-keyset 'creator-guard))
+(coin.create-account "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" (read-keyset 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5))
+(free.kadcars-nft-policy-2.initialize)
+(expect "Created collection"
+  true
+  (free.kadcars-nft-policy-2.create-collection))
 
 (expect "Create token K2#1"
   "created token true"
   (free.kadcar-factory.create-k2))
 
+
+(get-manifest "Kadcars#K:2:1")
+
   (env-sigs
     [{'key:'mint
      ,'caps:
-      [(free.universal-ledger.MINT "Kadcars#K2:1" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+      [(free.universal-ledger.MINT "Kadcars#K:2:1" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 24.65)
        ]},
        { 'key: 'bob
         ,'caps:[]
@@ -141,25 +1180,61 @@
          }])
 (expect "added WL for bob "
   true
-  (free.kadcars-nft-policy.add-whitelist "bob" 0 2)
+  (free.kadcars-nft-policy-2.add-whitelist "bob" 0 2 false 0)
 )
 
+;;;;; TESTING KILL SWITCH
 
-(expect "mint K2#1 to bob, success"
+(env-sigs
+  [])
+(expect "Price Multiplier public"
+true
+(free.kadcars-nft-policy-2.get-kill-switch))
+
+
+(expect-failure "Kill Switch Addition Fails without key"
+(free.kadcars-nft-policy-2.add-bool-consts "KILL_SWITCH" false))
+
+  (env-sigs
+    [{'key:'mint
+     ,'caps:
+      [(free.universal-ledger.MINT "Kadcars#K:2:1" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 24.65)
+       ]},
+       { 'key: 'bob
+        ,'caps:[]
+         },
+       { 'key: 'marmalade-admin
+        ,'caps:[]
+         }])
+
+ (expect "Kill Switch Addition works with key"
+  "Write succeeded"
+  (free.kadcars-nft-policy-2.add-bool-consts "KILL_SWITCH" false))
+
+
+(expect "GET KILL SWITCH public"
+  false
+  (free.kadcars-nft-policy-2.get-kill-switch))
+
+(env-chain-data {"block-time": (parse-time "%F" "2023-02-31")})
+
+
+
+(expect "mint K:2#1 to bob, success"
   true
-  (mint "Kadcars#K2:1" "bob" (read-keyset 'bob-guard) 1.0))
+  (mint "Kadcars#K:2:1" "bob" (read-keyset 'bob-guard) 1.0))
 
 (expect "Bob is credited"
   1.0
-  (get-balance "Kadcars#K2:1" 'bob))
+  (get-balance "Kadcars#K:2:1" 'bob))
 
 (expect "Create and mint fqp token EVENTS"
- [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:1" 0 0.0 free.kadcars-nft-policy]}
- ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:1" "bob" 1.0]}
- ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1]}
- ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:1" "bob" (read-keyset 'bob-guard)]}
- ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:1" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
- ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:1" 1.0]}]
+ [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K:2:1" 0 0.0 free.kadcars-nft-policy-2]}
+ ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K:2:1" "bob" 1.0]}
+ ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 21.25]}
+ ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K:2:1" "bob" (read-keyset 'bob-guard)]}
+ ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K:2:1" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
+ ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K:2:1" 1.0]}]
 (map (remove 'module-hash) (env-events true)))
 
 (commit-tx)
@@ -180,15 +1255,175 @@
     'fungible: coin
     ,'creator: "creator"
     ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-    ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
     ,'royalty-rate: 0.03
     ,'collection-id:"k:2"
     ,'owner: "creator"
-  },
-  'vehicle_spec: {
-    'vin: "2"
-    ,'make: "Kadcars"
-    ,'model: "K2"
+  }
+  ,'vehicle_spec: {
+    'vehicle-information : {
+        'vin: "2"
+        ,'make: "Kadcars"
+        ,'model: "K2"
+      }
+    ,'webp-ipfs:"url"
+    ,'mutable-state : {
+      "components": [
+          {
+              "name": "body",
+              "stats": [
+                  {
+                      "key": "body-type",
+                      "val": ""
+                  },
+                  {
+                      "key": "body-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "trim-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "headlights",
+                      "val": {}
+                  },
+                  {
+                      "key": "length",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "ground-to-roof",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "ground-clearance",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "wheel-base",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "center-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "hood-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "grill-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "rear-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          },
+          {
+              "name": "wheel",
+              "stats": [
+                  {
+                      "key": "wheel-type",
+                      "val": "offroad"
+                  },
+                  {
+                      "key": "rim-type",
+                      "val": ""
+                  },
+                  {
+                      "key": "rim-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "diameter",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "rim-to-edge",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          },
+          {
+              "name": "engine",
+              "stats": [
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          }
+      ]
+    }
+    ,'view-refs:{
+       "data":"ipfs/url",
+       "scheme":"ipfs"
+      }
   }
   ,'collection-unique-supply:1337
   ,'collection-id:"k:2"
@@ -222,16 +1457,19 @@
   "created token true"
   (free.kadcar-factory.create-k2))
 ;  (create-token "Kadcars#K2:UACSy_9_N0wSB1QX9NeELtcSoZbxaAUx4V8BjwWj4aA" 1
-;    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) free.kadcars-nft-policy))
+;    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) free.kadcars-nft-policy-2))
 
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:2" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+    [(free.universal-ledger.MINT "Kadcars#K2:2" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 25.46)
      ]},
      { 'key: 'bob
       ,'caps:[]
        }])
+
+(env-chain-data {"block-time": (parse-time "%F" "2023-02-31")})
+
 
 (expect "mint Kadcars#K2:2 to bob, success"
   true
@@ -245,9 +1483,9 @@
 (get-manifest "Kadcars#K2:2")
 
 (expect "Create and mint fqp token EVENTS"
-   [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:2" 0 0.0 free.kadcars-nft-policy]}
+   [{"name": "free.universal-ledger.TOKEN","params": ["Kadcars#K2:2" 0 0.0 free.kadcars-nft-policy-2]}
    ,{"name": "free.universal-ledger.MINT","params": ["Kadcars#K2:2" "bob" 1.0]}
-   ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1]}
+   ,{"name": "coin.TRANSFER","params": ["bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 21.25]}
    ,{"name": "free.universal-ledger.ACCOUNT_GUARD","params": ["Kadcars#K2:2" "bob"  (read-keyset 'bob-guard)]}
    ,{"name": "free.universal-ledger.RECONCILE","params": ["Kadcars#K2:2" 1.0 {"account": "","current": 0.0,"previous": 0.0} {"account": "bob","current": 1.0,"previous": 0.0}]}
    ,{"name": "free.universal-ledger.SUPPLY","params": ["Kadcars#K2:2" 1.0]}]
@@ -293,7 +1531,7 @@
   (expect "OFFER events"
     [{"name": "free.universal-ledger.OFFER","params": [(read-msg 'token) "bob" 1.0 120]},
      {"name": "free.universal-ledger.SALE","params": [(read-msg 'token) "bob" 1.0 120 (pact-id)]},
-     {"name": "free.kadcars-nft-policy.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 10.0 10.0 0.30000000000 "creator" (read-msg "quote")]},
+     {"name": "free.kadcars-nft-policy-2.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 10.0 10.0 0.30000000000 "creator" (read-msg "quote") 120]},
      {"name": "free.universal-ledger.ACCOUNT_GUARD","params": [(read-msg 'token) (sale-account) (create-pact-guard "SALE")]},
      {"name": "free.universal-ledger.TRANSFER","params": [(read-msg 'token) "bob" (sale-account) 1.0]},
      {"name": "free.universal-ledger.RECONCILE","params": [(read-msg 'token) 1.0
@@ -326,12 +1564,12 @@
  (map (get-balance (read-msg 'token)) ['bob (sale-account) 'coin-buyer]))
 
 (expect "coin-buyer is debited on coin balance by price"
- [90.000000000000 107.500000000000 100.0 102.500000000000]
+ [90.000000000000 67.200000000000 100.0 142.800000000000]
  (map (coin.get-balance ) ['coin-buyer 'bob 'creator "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"]))
 
 
  (expect "minted tokens:"
-  [1.0 0.0 1.0 0.0]
+  [0.0 1.0 0.0 1.0]
   (map (get-account-minted) (get-ledger)))
 
 (expect "k2:2 token balance for coin-buyer:"
@@ -347,12 +1585,13 @@
    0.0
    (get-balance "Kadcars#K2:2" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
 
-(free.kadcars-nft-policy.get-cars-in-collection-by-owner "k:2" "coin-buyer")
+(free.kadcars-nft-policy-2.get-cars-in-collection-by-owner "k:2" "coin-buyer")
 
 (rollback-tx)
 
 
 (begin-tx)
+
 ;;;;;;; TEST WL & FREE MINT ;;;;;;;
 (env-data {"john-guard": {"keys": ["john"], "pred": "keys-all"},
 
@@ -360,25 +1599,188 @@
   'fungible: coin
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
   ,'royalty-rate: 0.03
   ,'collection-id:"k:2"
   ,'owner: "creator"
-},
-'vehicle_spec: {
-  'vin: "3"
-  ,'make: "Kadcars"
-  ,'model: "K2"
-}})
+}
+,'vehicle_spec: {
+  'vehicle-information : {
+      'vin: "3"
+      ,'make: "Kadcars"
+      ,'model: "K2"
+    }
+  ,'webp-ipfs:"url"
+  ,'mutable-state : {
+    "components": [
+        {
+            "name": "body",
+            "stats": [
+                {
+                    "key": "body-type",
+                    "val": ""
+                },
+                {
+                    "key": "body-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "trim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "headlights",
+                    "val": {}
+                },
+                {
+                    "key": "length",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-to-roof",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-clearance",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "wheel-base",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "center-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "hood-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "grill-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rear-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "wheel",
+            "stats": [
+                {
+                    "key": "wheel-type",
+                    "val": "offroad"
+                },
+                {
+                    "key": "rim-type",
+                    "val": ""
+                },
+                {
+                    "key": "rim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "diameter",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rim-to-edge",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "engine",
+            "stats": [
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        }
+    ]
+  }
+  ,'view-refs:{
+     "data":"ipfs/url",
+     "scheme":"ipfs"
+    }
+}
+,'collection-unique-supply:1337
+,'collection-id:"k:2"}
+)
 
 (env-sigs
   [{'key:'mint
    ,'caps:
     [(free.universal-ledger.MINT "Kadcars#K2:3" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 0.0)
      ]},
-   { 'key: 'john
-    ,'caps:[]
-     },
+     { 'key: 'john
+      ,'caps:[]
+       },
    { 'key: 'creator
     ,'caps:[]
      },
@@ -388,32 +1790,46 @@
 
 (coin.create-account 'john (read-keyset 'john-guard))
 
-(expect "Create token K2#1"
+(expect "Create token K2#:3"
   "created token true"
   (free.kadcar-factory.create-k2))
 
 
-
-
-
-(expect "free mint for john "
+(expect "add wl-free mint for john "
   true
-  (free.kadcars-nft-policy.add-whitelist "john" 1 4
+  (free.kadcars-nft-policy-2.add-whitelist "john" 1 4 false 0
   )
 )
+(commit-tx)
+
+
+(begin-tx "john tries free mint before time")
+(env-chain-data {"block-time": (parse-time "%F" "2023-01-27")})
+(free.kadcars-nft-policy-2.get-account-whitelist-info "john")
+(expect-failure "failed"
+(free.kadcar-factory.mint-k2 "Kadcars#K2:3" "john" (read-keyset 'john-guard)))
+(rollback-tx)
+
+
+
+
+(begin-tx "john tries same free mint but after time")
+(env-chain-data {"block-time": (parse-time "%F" "2023-02-30")})
+
 
 (expect "mint Kadcars#K2:3 to john, success"
   true
 (free.kadcar-factory.mint-k2 "Kadcars#K2:3" "john" (read-keyset 'john-guard)))
 
 (expect "john loses 0"
- [100.0
- ]
+ [100.0]
  (map (coin.get-balance ) ['john]))
 
- (free.kadcars-nft-policy.get-account-records-info "john")
+ (free.kadcars-nft-policy-2.get-account-whitelist-info "john")
 
 (commit-tx)
+
+
 
 
 
@@ -425,22 +1841,183 @@
   'fungible: coin
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
   ,'royalty-rate: 0.03
   ,'collection-id:"k:2"
   ,'owner: "creator"
-},
-'vehicle_spec: {
-  'vin: "4"
-  ,'make: "Kadcars"
-  ,'model: "K2"
-}})
+}
+,'vehicle_spec: {
+  'vehicle-information : {
+      'vin: "4"
+      ,'make: "Kadcars"
+      ,'model: "K2"
+    }
+  ,'webp-ipfs:"url"
+  ,'mutable-state : {
+    "components": [
+        {
+            "name": "body",
+            "stats": [
+                {
+                    "key": "body-type",
+                    "val": ""
+                },
+                {
+                    "key": "body-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "trim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "headlights",
+                    "val": {}
+                },
+                {
+                    "key": "length",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-to-roof",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-clearance",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "wheel-base",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "center-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "hood-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "grill-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rear-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "wheel",
+            "stats": [
+                {
+                    "key": "wheel-type",
+                    "val": "offroad"
+                },
+                {
+                    "key": "rim-type",
+                    "val": ""
+                },
+                {
+                    "key": "rim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "diameter",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rim-to-edge",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "engine",
+            "stats": [
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        }
+    ]
+  }
+  ,'view-refs:{
+     "data":"ipfs/url",
+     "scheme":"ipfs"
+    }
+}
+})
 
 
 (env-sigs
   [{'key:'mint
    ,'caps:
-    [(free.universal-ledger.MINT "Kadcars#K2:4" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 1.1)
+    [(free.universal-ledger.MINT "Kadcars#K2:4" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 24.65)
      ]},
    { 'key: 'john
     ,'caps:[]
@@ -456,14 +2033,15 @@
   "created token true"
   (free.kadcar-factory.create-k2))
 
+(env-chain-data {"block-time": (parse-time "%F" "2023-02-31")})
+
 
 (expect "mint Kadcars#K2:4 to john, success"
     true
 (free.kadcar-factory.mint-k2 "Kadcars#K2:4" "john" (read-keyset 'john-guard)))
 
 (expect "john loses 1.1 for WL price"
- [98.9
- ]
+ [78.75]
  (map (coin.get-balance ) ['john]))
 
 (commit-tx)
@@ -477,15 +2055,29 @@
 (env-sigs
   [{'key:'mint
    ,'caps:
+    [(free.universal-ledger.MINT "Kadcars#K2:4" "john" 1.0), (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 24.65)
+     ]},
+   { 'key: 'john
+    ,'caps:[]
+     },
+   { 'key: 'creator
+    ,'caps:[]
+     },
+   { 'key: 'marmalade-admin
+    ,'caps:[]
+     }])
+(env-sigs
+  [{'key:'mint
+   ,'caps:
     [(free.universal-ledger.MINT "Kadcars#K2:5" "john" 1.0),
-     (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 2.2),
+     (coin.TRANSFER "john" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 49.3),
      (free.universal-ledger.MINT "Kadcars#K2:6" "john" 1.0)
 
      ]},
    { 'key: 'john
     ,'caps:[]
      },
-   { 'key: 'creator
+   { 'key: "free.marmalade-admin"
     ,'caps:[]
      },
    { 'key: 'marmalade-admin
@@ -497,16 +2089,177 @@
   'fungible: coin
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
   ,'royalty-rate: 0.03
   ,'collection-id:"k:2"
   ,'owner: "creator"
-},
-'vehicle_spec: {
-  'vin: "5"
-  ,'make: "Kadcars"
-  ,'model: "K2"
-}})
+}
+,'vehicle_spec: {
+  'vehicle-information : {
+      'vin: "5"
+      ,'make: "Kadcars"
+      ,'model: "K2"
+    }
+  ,'webp-ipfs:"url"
+  ,'mutable-state : {
+    "components": [
+        {
+            "name": "body",
+            "stats": [
+                {
+                    "key": "body-type",
+                    "val": ""
+                },
+                {
+                    "key": "body-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "trim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "headlights",
+                    "val": {}
+                },
+                {
+                    "key": "length",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-to-roof",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-clearance",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "wheel-base",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "center-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "hood-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "grill-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rear-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "wheel",
+            "stats": [
+                {
+                    "key": "wheel-type",
+                    "val": "offroad"
+                },
+                {
+                    "key": "rim-type",
+                    "val": ""
+                },
+                {
+                    "key": "rim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "diameter",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rim-to-edge",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "engine",
+            "stats": [
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        }
+    ]
+  }
+  ,'view-refs:{
+     "data":"ipfs/url",
+     "scheme":"ipfs"
+    }
+}
+})
 
 
 (expect "Create token Kadcars#K2:5"
@@ -519,17 +2272,178 @@
   'fungible: coin
   ,'creator: "creator"
   ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
   ,'royalty-rate: 0.03
   ,'collection-id:"k:2"
   ,'owner: "creator"
-},
-'token-list:["Kadcars#K2:5" "Kadcars#K2:6"],
-'vehicle_spec: {
-  'vin: "6"
-  ,'make: "Kadcars"
-  ,'model: "K2"
-}})
+}
+,'token-list:["Kadcars#K2:5" "Kadcars#K2:6"]
+,'vehicle_spec: {
+  'vehicle-information : {
+      'vin: "6"
+      ,'make: "Kadcars"
+      ,'model: "K2"
+    }
+  ,'webp-ipfs:"url"
+  ,'mutable-state : {
+    "components": [
+        {
+            "name": "body",
+            "stats": [
+                {
+                    "key": "body-type",
+                    "val": ""
+                },
+                {
+                    "key": "body-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "trim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "headlights",
+                    "val": {}
+                },
+                {
+                    "key": "length",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-to-roof",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-clearance",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "wheel-base",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "center-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "hood-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "grill-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rear-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "wheel",
+            "stats": [
+                {
+                    "key": "wheel-type",
+                    "val": "offroad"
+                },
+                {
+                    "key": "rim-type",
+                    "val": ""
+                },
+                {
+                    "key": "rim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "diameter",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rim-to-edge",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "engine",
+            "stats": [
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        }
+    ]
+  }
+  ,'view-refs:{
+     "data":"ipfs/url",
+     "scheme":"ipfs"
+    }
+}
+})
 
 
 (expect "Create token Kadcars#K2:6"
@@ -537,10 +2451,9 @@
   (free.kadcar-factory.create-k2))
 
 (expect "minted bulk"
-    ["Kadcars#K2:5" "Kadcars#K2:6"]
-(free.kadcar-factory.mint-bulk
-   "john" (read-keyset 'john-guard)))
-
+    [true true]
+    (free.universal-ledger.mint-atrium-bulk
+    ["Kadcars#K2:5" "Kadcars#K2:6" ] "john" (read-keyset 'john-guard)))
 
 
 
@@ -557,23 +2470,341 @@
     'fungible: coin
     ,'creator: "creator"
     ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
-    ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
     ,'royalty-rate: 0.03
     ,'collection-id:"k:2"
     ,'owner: "creator"
   },
-  'token-list:["Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"],
-  'vehicle_spec: {
-    'vin: "7"
-    ,'make: "Kadcars"
-    ,'model: "K2"
-  }})
+  'mutable-state : {
+    "components": [
+        {
+            "name": "body",
+            "stats": [
+                {
+                    "key": "body-type",
+                    "val": ""
+                },
+                {
+                    "key": "body-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "trim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "headlights",
+                    "val": {}
+                },
+                {
+                    "key": "length",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-to-roof",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "ground-clearance",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "wheel-base",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "center-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "hood-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "grill-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rear-width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "wheel",
+            "stats": [
+                {
+                    "key": "wheel-type",
+                    "val": "offroad"
+                },
+                {
+                    "key": "rim-type",
+                    "val": ""
+                },
+                {
+                    "key": "rim-material",
+                    "val": {
+                        "type": "",
+                        "id": ""
+                    }
+                },
+                {
+                    "key": "width",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "diameter",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "rim-to-edge",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                },
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "engine",
+            "stats": [
+                {
+                    "key": "weight",
+                    "val": {
+                        "value": 0.0,
+                        "unit": ""
+                    }
+                }
+            ]
+        }
+    ]
+}
+ ,'view-refs:{
+    "data":"ipfs/url",
+    "scheme":"ipfs"
+   }
+  ,'token-list:["Kadcars#K2:ruXzFce2JXP7_7lxqvXlmwcbdtI-qZ1Zr3cm6gANMoU" "Kadcars#K2:RIbk5Ww0A_soi4_v-Zphlezfe5eGyXOwatbUfJqjAVo"]
+  ,'vehicle_spec: {
+    'vehicle-information : {
+        'vin: "7"
+        ,'make: "Kadcars"
+        ,'model: "K2"
+      }
+    ,'webp-ipfs:"url"
+    ,'mutable-state : {
+      "components": [
+          {
+              "name": "body",
+              "stats": [
+                  {
+                      "key": "body-type",
+                      "val": ""
+                  },
+                  {
+                      "key": "body-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "trim-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "headlights",
+                      "val": {}
+                  },
+                  {
+                      "key": "length",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "ground-to-roof",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "ground-clearance",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "wheel-base",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "center-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "hood-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "grill-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "rear-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          },
+          {
+              "name": "wheel",
+              "stats": [
+                  {
+                      "key": "wheel-type",
+                      "val": "offroad"
+                  },
+                  {
+                      "key": "rim-type",
+                      "val": ""
+                  },
+                  {
+                      "key": "rim-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "diameter",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "rim-to-edge",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          },
+          {
+              "name": "engine",
+              "stats": [
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          }
+      ]
+    }
+    ,'view-refs:{
+       "data":"ipfs/url",
+       "scheme":"ipfs"
+      }
+  }
+  })
 
-(expect "Create token K2#1"
+(expect "Create token K2#7"
   "created token true"
 
   (free.kadcar-factory.create-k2))
-
 
 
 (commit-tx)
@@ -612,7 +2843,7 @@
   (expect "OFFER events"
     [{"name": "free.universal-ledger.OFFER","params": [(read-msg 'token) "john" 1.0 120]},
      {"name": "free.universal-ledger.SALE","params": [(read-msg 'token) "john" 1.0 120 (pact-id)]},
-     {"name": "free.kadcars-nft-policy.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 7.0 7.0 0.35000000000 "creator" (read-msg "quote")]},
+     {"name": "free.kadcars-nft-policy-2.QUOTE","params": [(pact-id) (read-msg 'token) 1.0 7.0 7.0 0.35000000000 "creator" (read-msg "quote") 120]},
      {"name": "free.universal-ledger.ACCOUNT_GUARD","params": [(read-msg 'token) (sale-account) (create-pact-guard "SALE")]},
      {"name": "free.universal-ledger.TRANSFER","params": [(read-msg 'token) "john" (sale-account) 1.0]},
      {"name": "free.universal-ledger.RECONCILE","params": [(read-msg 'token) 1.0
@@ -644,12 +2875,12 @@
  (map (get-balance (read-msg 'token)) ['john (sale-account) 'coin-buyer]))
 
 (expect "coin-buyer is debited on coin balance by price"
- [93.000000000000 104.450000000000 100.0 105.850000000000]
+ [93.000000000000 64.150000000000 100.0 206.600000000000]
  (map (coin.get-balance ) ['coin-buyer 'bob 'creator "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"]))
 
 
  (expect "minted tokens:"
-  [1.0 1.0 1.0 1.0 1.0 1.0 0.0 0.0]
+  [1.0 1.0 1.0 1.0 1.0 0.0 0.0 1.0]
   (map (get-account-minted ) (get-ledger)))
 
 
@@ -667,9 +2898,562 @@
 
    (get-balance "Kadcars#K2:6" "p:ZC72yKJMFMI941Gz5JDJcyOhI1XkOptJJqox4w5Qig4:SALE"))
 
+
 (rollback-tx)
 
 
 
-(free.kadcars-nft-policy.get-minted-tokens-for-collection "k:2")
-(free.kadcars-nft-policy.get-non-minted-tokens-for-collection "k:2")
+(free.kadcars-nft-policy-2.get-minted-tokens-for-collection "k:2")
+(free.kadcars-nft-policy-2.get-non-minted-tokens-for-collection "k:2")
+
+;;(free.universal-ledger.get-manifest "Kadcars#K2:1")
+
+(free.universal-ledger.get-manifest "Kadcars#K:2:1")
+
+(expect "Price for 1000th token"
+ 25.0
+ (free.kadcars-nft-policy-2.get-base-price-by-supply 1000))
+
+(expect "Price for 1001th token"
+29.0
+(free.kadcars-nft-policy-2.get-base-price-by-supply 1001))
+
+(expect "Price for 1500th token"
+29.0
+(free.kadcars-nft-policy-2.get-base-price-by-supply 1500))
+
+(expect "Price for 1001th token"
+33.0
+(free.kadcars-nft-policy-2.get-base-price-by-supply 1501))
+
+(expect "Price for 1001th token"
+36.0
+(free.kadcars-nft-policy-2.get-base-price-by-supply 2001))
+
+
+
+(begin-tx)
+;;;;; TEST START TIMES BEFORE MINT
+(env-chain-data {"block-time": (parse-time "%F" "2023-01-27")})
+
+(expect-failure "LIVE mint"
+  "Mint is not live."
+  (free.kadcars-nft-policy-2.enforce-mint-live "Champion mint granted" {
+      "account": "bob3",
+      "free-mints-remaining": 3,
+      "free-mints-granted": 3,
+      "whitelists-remaining": 4,
+      "minted-total": 1,
+      "is-champion": true
+    }))
+
+(expect-failure "LIVE mint"
+  "Mint is not live."
+  (free.kadcars-nft-policy-2.enforce-mint-live "free mint granted" {
+      "account": "bob3",
+      "free-mints-remaining": 3,
+      "free-mints-granted": 3,
+      "whitelists-remaining": 4,
+      "minted-total": 1,
+      "is-champion": false
+    }))
+
+(expect-failure "LIVE mint"
+  "Public Mint is NOT Live. chil..."
+  (free.kadcars-nft-policy-2.enforce-mint-live "account not whitelisted." {
+      "account": "bob3",
+      "free-mints-remaining": 3,
+      "free-mints-granted": 3,
+      "whitelists-remaining": 4,
+      "minted-total": 1,
+      "is-champion": false
+    }))
+
+(expect-failure "LIVE mint"
+  "Public Mint is NOT Live. chil..."
+  (free.kadcars-nft-policy-2.enforce-mint-live "whitelist granted" {
+      "account": "bob3",
+      "free-mints-remaining": 3,
+      "free-mints-granted": 3,
+      "whitelists-remaining": 4,
+      "minted-total": 1,
+      "is-champion": false
+    }))
+
+
+
+
+
+;;; Setting time between champion and public
+(env-chain-data {"block-time": (parse-time "%F" "2023-02-11")})
+
+(expect "LIVE mint"
+true
+(free.kadcars-nft-policy-2.enforce-mint-live "Champion mint granted" {
+    "account": "bob3",
+    "free-mints-remaining": 3,
+    "free-mints-granted": 3,
+    "whitelists-remaining": 4,
+    "minted-total": 1,
+    "is-champion": true
+  }))
+
+(expect "LIVE mint"
+true
+(free.kadcars-nft-policy-2.enforce-mint-live "free mint granted" {
+    "account": "bob3",
+    "free-mints-remaining": 3,
+    "free-mints-granted": 3,
+    "whitelists-remaining": 4,
+    "minted-total": 1,
+    "is-champion": true
+  }))
+
+(expect "LIVE mint"
+  true
+  (free.kadcars-nft-policy-2.enforce-mint-live "account not whitelisted." {
+    "account": "bob3",
+    "free-mints-remaining": 0,
+    "free-mints-granted": 0,
+    "whitelists-remaining": 0,
+    "minted-total": 1,
+    "is-champion": true
+  }))
+
+(expect-failure "LIVE mint"
+  "Public Mint is NOT Live. chil..."
+  (free.kadcars-nft-policy-2.enforce-mint-live "account not whitelisted." {
+      "account": "bob3",
+      "free-mints-remaining": 3,
+      "free-mints-granted": 3,
+      "whitelists-remaining": 4,
+      "minted-total": 1,
+      "is-champion": false
+    }))
+
+(expect-failure "LIVE mint"
+  "Public Mint is NOT Live. chil..."
+  (free.kadcars-nft-policy-2.enforce-mint-live "whitelist granted" {
+      "account": "bob3",
+      "free-mints-remaining": 3,
+      "free-mints-granted": 3,
+      "whitelists-remaining": 4,
+      "minted-total": 1,
+      "is-champion": false
+    }))
+
+(env-chain-data {"block-time": (time "2023-02-11T06:00:00Z")})
+
+(expect "LIVE mint"
+  true
+    (free.kadcars-nft-policy-2.enforce-mint-live "Champion mint granted" {
+        "account": "bob3",
+        "free-mints-remaining": 3,
+        "free-mints-granted": 3,
+        "whitelists-remaining": 4,
+        "minted-total": 1,
+        "is-champion": false
+      }))
+
+(expect "LIVE mint"
+  true
+    (free.kadcars-nft-policy-2.enforce-mint-live "account not whitelisted." {
+        "account": "bob3",
+        "free-mints-remaining": 0,
+        "free-mints-granted": 0,
+        "whitelists-remaining": 0,
+        "minted-total": 0,
+        "is-champion": false
+      }))
+
+(expect "LIVE mint"
+  true
+    (free.kadcars-nft-policy-2.enforce-mint-live "whitelist granted" {
+        "account": "bob3",
+        "free-mints-remaining": 3,
+        "free-mints-granted": 3,
+        "whitelists-remaining": 4,
+        "minted-total": 1,
+        "is-champion": false
+      }))
+
+
+
+
+;;;;; TEST PRICE MULTIPLIER BY ROLE
+
+(expect "Price Multiplier public"
+1.0
+(free.kadcars-nft-policy-2.get-mint-multiplier "account not whitelisted."))
+
+(expect "Price Multiplier public"
+0.70
+(free.kadcars-nft-policy-2.get-mint-multiplier "Champion mint granted"))
+
+(expect "Price Multiplier public"
+0.0
+(free.kadcars-nft-policy-2.get-mint-multiplier "free mint granted"))
+
+
+;;;;; TEST BULK
+
+
+(env-data
+ {
+   "wls": [
+      {
+          "account": "bob1",
+          "free-mints-remaining": 1,
+          "free-mints-granted": 1,
+          "whitelists-remaining": 2,
+          "minted-total": 0,
+          "is-champion": false
+        },
+        {
+            "account": "bob2",
+            "free-mints-remaining": 2,
+            "free-mints-granted": 2,
+            "whitelists-remaining": 3,
+            "minted-total": 0,
+            "is-champion": false
+          },
+          {
+              "account": "bob3",
+              "free-mints-remaining": 3,
+              "free-mints-granted": 3,
+              "whitelists-remaining": 4,
+              "minted-total": 1,
+              "is-champion": true
+            }
+   ],
+    "bob1": {"keys": ["bob"], "pred": "keys-all"},
+    "bob2": {"keys": ["bob"], "pred": "keys-all"},
+    "bob3": {"keys": ["bob"], "pred": "keys-all"}
+
+  })
+
+(env-sigs [
+  { 'key: 'marmalade-admin
+   ,'caps: []
+   }])
+(coin.create-account 'bob1 (read-keyset 'bob1))
+(coin.create-account 'bob2 (read-keyset 'bob2))
+(coin.create-account 'bob3 (read-keyset 'bob3))
+
+(expect "Test Bulk WL Add"
+  [true true true]
+  (free.kadcars-nft-policy-2.bulk-add-whitelist))
+
+(expect "Bob1 WhiteList"
+  {"account": "bob1","free-mints-remaining": 1, "free-mints-granted": 1,"is-champion": false,"minted-total": 0,"whitelists-remaining": 2}
+  (free.kadcars-nft-policy-2.get-account-whitelist-info "bob1"))
+
+(expect "Bob2 WhiteList"
+  {"account": "bob2","free-mints-remaining": 2 , "free-mints-granted": 2,"is-champion": false,"minted-total": 0,"whitelists-remaining": 3}
+  (free.kadcars-nft-policy-2.get-account-whitelist-info "bob2"))
+
+(expect "Bob3 WhiteList"
+  {"account": "bob3","free-mints-remaining": 3, "free-mints-granted": 3,"is-champion": true,"minted-total": 1,"whitelists-remaining": 4}
+  (free.kadcars-nft-policy-2.get-account-whitelist-info "bob3"))
+
+
+(rollback-tx)
+
+(begin-tx)
+
+(env-data {
+   'upgrade: false
+  ,'ns: "marmalade"
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
+  ,"john-guard": {"keys": ["john"], "pred": "keys-all"}
+  ,'token_spec: {
+    'fungible: coin
+    ,'creator: "creator"
+    ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+    ,'royalty-rate: 0.03
+    ,'collection-id:"k:2"
+    ,'owner: "creator"
+  }
+  ,'vehicle_spec: {
+    'vehicle-information : {
+        'vin: "8"
+        ,'make: "Kadcars"
+        ,'model: "K2"
+      }
+    ,'webp-ipfs:"url"
+    ,'mutable-state : {
+      "components": [
+          {
+              "name": "body",
+              "stats": [
+                  {
+                      "key": "body-type",
+                      "val": ""
+                  },
+                  {
+                      "key": "body-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "trim-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "headlights",
+                      "val": {}
+                  },
+                  {
+                      "key": "length",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "ground-to-roof",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "ground-clearance",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "wheel-base",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "center-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "hood-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "grill-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "rear-width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          },
+          {
+              "name": "wheel",
+              "stats": [
+                  {
+                      "key": "wheel-type",
+                      "val": "offroad"
+                  },
+                  {
+                      "key": "rim-type",
+                      "val": ""
+                  },
+                  {
+                      "key": "rim-material",
+                      "val": {
+                          "type": "",
+                          "id": ""
+                      }
+                  },
+                  {
+                      "key": "width",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "diameter",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "rim-to-edge",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  },
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          },
+          {
+              "name": "engine",
+              "stats": [
+                  {
+                      "key": "weight",
+                      "val": {
+                          "value": 0.0,
+                          "unit": ""
+                      }
+                  }
+              ]
+          }
+      ]
+    }
+    ,'view-refs:{
+       "data":"ipfs/url",
+       "scheme":"ipfs"
+      }
+  }
+  ,'collection-unique-supply:1337
+  ,'collection-id:"k:2"
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+  ,'mint-guard: {"keys": ["mint"], "pred": "keys-all"}
+  ,'bob-guard: {"keys": ["bob"], "pred": "keys-all"}
+  ,'creator: "creator"
+  ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+
+  ,'token_spec: {
+    'fungible: coin
+    ,'creator: "creator"
+    ,'creator-guard: {"keys": ["creator"], "pred": "keys-all"}
+    ,'royalty-rate: 0.03
+    ,'owner: "creator"
+    ,'collection-id: "k:2"
+  },
+  'transforms: [
+    { "transform":
+      {
+        'type: "add",
+        'obj :{
+          'uri: {'scheme: "ipfs", 'data: "data" }
+          ,'hash:"1234"
+          ,'datum:{"hi":"hello"}
+        }
+      }
+    },
+    { "transform":
+      {
+          'type: "replace",
+          'obj : {
+            'uri :{'scheme: "ipfs", 'data: "data" },
+            'new-datum : {
+              'uri: {'scheme: "ipfs", 'data: "data-new" }
+              ,'hash:"1234"
+              ,'datum:{"NO":"WAY"}
+            }
+          }
+      }
+    },
+    { "transform":
+      {
+          'type: "remove",
+          'obj : {
+            'uri :{'scheme: "ipfs", 'data: "data-new" }
+          }
+      }
+    },
+    { "transform":
+      {
+          'type: "uri",
+          'obj : {
+            'uri :{'scheme: "ipfs", 'data: "NEWWEBP" }
+          }
+      }
+    }
+  ]
+
+  })
+(env-sigs
+  [{'key:'dummy
+   ,'caps:
+   [(free.universal-ledger.MINT "Kadcars#K2:8" "bob" 1.0), (coin.TRANSFER "bob" "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5" 25.0)
+    ()
+     ]},
+   { 'key: 'marmalade-admin
+    ,'caps:[]
+     },
+   { 'key: 'bob
+    ,'caps:[]
+     }
+     ,
+     { 'key: 'creator
+      ,'caps:[]
+       },
+       { 'key: 'bob
+        ,'caps:[]
+         },
+     { 'key: 'f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5
+      ,'caps:[]
+       }
+   ])
+   (use kip.token-manifest)
+   (use free.universal-ledger)
+(expect "Create token K2#8"
+  "created token true"
+  (free.kadcar-factory.create-k2)
+)
+(free.universal-ledger.create-token "Kadcars#K2:NO-GO" 1
+    (create-manifest (uri "text" "Kadcars-Image-uri") [(create-datum (uri "pact:schema" "kadcars-schema") {"speed":100})]) free.fixed-quote-royalty-policy)
+
+
+(free.kadcars-nft-policy-2.get-non-minted-tokens-for-collection "k:2")
+(expect-failure "minted bulk"
+    "Policies not uniform"
+    (free.universal-ledger.mint-atrium-bulk
+    ["Kadcars#K2:8" "Kadcars#K2:NO-GO" ] "bob" (read-keyset 'bob-guard)))
+
+(expect "minted bulk"
+    [true]
+    (free.universal-ledger.mint-atrium-bulk
+    ["Kadcars#K2:8"] "bob" (read-keyset 'bob-guard)))
+
+(free.universal-ledger.get-manifest "Kadcars#K2:8")
+
+(free.universal-ledger.modify-token "Kadcars#K2:8"
+  (read-keyset "bob-guard") "bob"  (read-msg 'transforms))
+(free.universal-ledger.modify-token "Kadcars#K2:8"
+  (read-keyset "bob-guard") "bob"  (read-msg 'transforms))
+(free.universal-ledger.get-manifest "Kadcars#K2:8")
+
+(free.upgrade-utils.get-max-version "Kadcars#K2:8" (free.universal-ledger.get-manifest "Kadcars#K2:8"))
+(free.upgrade-utils.get-certificate 1 "Kadcars#K2:8")

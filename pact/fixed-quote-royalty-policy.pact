@@ -1,26 +1,23 @@
-(namespace (read-msg 'ns))
+(namespace "free")
 
 (module fixed-quote-royalty-policy GOVERNANCE
 
   @doc "Policy for fixed issuance with royalty and quoted sale in specified fungible."
 
   (defcap GOVERNANCE ()
-    (enforce-guard (keyset-ref-guard 'marmalade-admin )))
+    (enforce-guard (keyset-ref-guard "free.kc-policy-admin" )))
 
-  (implements kip.token-policy-v1)
-  (use kip.token-policy-v1 [token-info])
+    (implements free.universal-token-policy-v4)
+    (use free.universal-token-policy-v4 [token-info])
 
   (defschema policy-schema
     fungible:module{fungible-v2}
     creator:string
     creator-guard:guard
-    mint-guard:guard
-    max-supply:decimal
-    min-amount:decimal
     royalty-rate:decimal
     owner:string
-    latest-spec
   )
+
 
   (deftable policies:{policy-schema})
 
@@ -90,7 +87,7 @@
 
 
   (defun enforce-ledger:bool ()
-     (enforce-guard (marmalade.ledger.ledger-guard))
+     (enforce-guard (universal-ledger.ledger-guard))
    )
 
   (defun enforce-mint:bool
@@ -120,40 +117,72 @@
     (enforce false "Burn prohibited")
   )
 
+  (defun enforce-mint-bulk:bool
+  ( token-list:[object{token-info}]
+    account:string
+    guard:guard
+  )
+  (enforce false "bulk mint not enabled rn")
+  )
+
+  (defun enforce-mod:bool (
+      token:object{token-info}
+      transformation-list:list)
+    (enforce-ledger)
+    (enforce false "modifications not enabled rn")
+  )
+  (defun enforce-withdraw:bool
+    ( token:object{token-info}
+      seller:string
+      amount:decimal
+      sale-id:string
+    )
+    @doc "Capture quote spec for SALE of TOKEN from message"
+    ;;(enforce false "Sale not active wait for mint please.")
+    (enforce-ledger)
+    (enforce-sale-pact sale-id)
+    (enforce false "withdraw not enabled rn")
+  )
+  (defschema token-policy-schema
+    fungible:module{fungible-v2}
+    creator:string
+    creator-guard:guard
+    royalty-rate:decimal
+    collection-id:string
+    owner:string
+  )
+
   (defun enforce-init:bool
     ( token:object{token-info}
     )
+    (with-capability (GOVERNANCE)
     (enforce-ledger)
-    (let* ( (spec:object{policy-schema} (read-msg TOKEN_SPEC))
+    (let* ( (spec:object{token-policy-schema} (read-msg TOKEN_SPEC))
             (fungible:module{fungible-v2} (at 'fungible spec))
             (creator:string (at 'creator spec))
             (creator-guard:guard (at 'creator-guard spec))
-            (mint-guard:guard (at 'mint-guard spec))
-            (max-supply:decimal (at 'max-supply spec))
-            (min-amount:decimal (at 'min-amount spec))
-            (owner:string (at 'owner spec))
             (royalty-rate:decimal (at 'royalty-rate spec))
+            (collection-identifier:string (at 'collection-id spec))
+
             (creator-details:object (fungible::details creator ))
+
+            (token-id (at 'id token))
             )
-      (enforce (>= min-amount 0.0) "Invalid min-amount")
-      (enforce (>= max-supply 0.0) "Invalid max-supply")
-      (enforce (=
-        (at 'guard creator-details) creator-guard)
-        "Creator guard does not match")
-      (enforce (and
-        (>= royalty-rate 0.0) (<= royalty-rate 1.0))
-        "Invalid royalty rate")
-      (insert policies (at 'id token)
-        { 'fungible: fungible
+
+
+
+      (insert policies token-id
+        {
+        'fungible: fungible
         , 'creator: creator
+        , 'owner: creator
         , 'creator-guard: creator-guard
-        , 'mint-guard: mint-guard
-        , 'max-supply: max-supply
-        , 'min-amount: min-amount
-        , 'royalty-rate: royalty-rate
-        , 'owner: owner
-        , 'latest-spec: {} }))
-    true
+        , 'royalty-rate: royalty-rate }
+        )
+
+    )
+      true
+    )
   )
 
   (defun enforce-offer:bool
@@ -161,6 +190,7 @@
       seller:string
       amount:decimal
       sale-id:string
+      timeout:integer
     )
     @doc "Capture quote spec for SALE of TOKEN from message"
     (enforce-ledger)

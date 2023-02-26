@@ -1,7 +1,6 @@
 (namespace "free")
-(define-keyset "free.kc-policy-admin" (read-keyset 'marmalade-admin))
-
-(module kadcars-nft-policy GOVERNANCE
+(define-keyset "free.kc-policy-admin"  (read-keyset 'marmalade-admin))
+(module kadcars-nft-policy-2 GOVERNANCE
   @doc "Policy for Kadcar NFT issuance with royalty and quoted sale in specified fungible."
   (defconst ADMIN_ADDRESS "k:f157854c15e9bb8fb55aafdecc1ce27a3d60973cbe6870045f4415dc06be06f5"
     @doc "admin address which also recieves mint payouts")
@@ -17,6 +16,7 @@
   (defconst PUBLIC_ROLE "account not whitelisted.")
   (defconst KILL_SWITCH_KEY "KILL_SWITCH")
 ;;DEPRECATE
+  (defconst MINTED_TOTAL_KEY "minted_total")
   (defconst MINT_PRICE 10.0  @doc "base mint price")
   (defconst PUBLIC_SALE false @doc "flag to indicate public sale has begun")
   (defcap GOVERNANCE ()
@@ -25,17 +25,23 @@
    (compose-capability (UPDATE-OWNER id receiver)))
   (defcap MINT(token-id:string new-owner:string)
     (compose-capability (UPDATE_WL))
+    (compose-capability (PRIVATE))
     (compose-capability (UPDATE-OWNER token-id new-owner))
   )
   (defcap UPDATE_WL ()
       @doc "private cap for update-whitelists"
       true)
 
+  (defcap PRIVATE ()
+          @doc "Can only be called from a private context"
+          true
+  )
+
   (defcap UPDATE-OWNER (token-id:string new-owner:string)
     true)
 
-  (implements free.universal-token-policy-v2)
-  (use free.universal-token-policy-v2 [token-info])
+  (implements free.universal-token-policy-v4)
+  (use free.universal-token-policy-v4 [token-info])
 
   (defschema account-wl-info-schema
     account:string
@@ -65,10 +71,6 @@
     royalty-rate:decimal
     collection-id:string
     owner:string
-  )
-
-  (defschema lock
-    val:bool
   )
 
   (defschema bool-consts-schema
@@ -111,8 +113,12 @@
     id:string
     spec:object{quote-spec})
 
-  (deftable quotes:{quote-schema})
+  (defschema counts-schema
+    count:decimal
+  )
 
+  (deftable quotes:{quote-schema})
+  (deftable counts:{counts-schema})
   (defun get-policy (token:object{token-info})
     (read tokens (at 'id token))
   )
@@ -141,6 +147,13 @@
      (enforce-guard (free.universal-ledger.ledger-guard))
    )
 
+
+   (defun initialize ()
+             @doc "Initializes the contract the first time its loaded"
+             (insert counts MINTED_TOTAL_KEY {"count": 0.0})
+            ;; (coin.create-account MODULE-ESCROW (create-ESCROW-guard))
+         )
+
   (defun enforce-mint:bool
     ( token:object{token-info}
       account:string
@@ -164,8 +177,6 @@
               (mint-price-precise (* base-mint-price mint-price-multiplier))
               (mint-price (round mint-price-precise 4))
               (token-id (at 'id token))
-              (token-ids ["a" "v" "c"])
-
 
               (wl-live:bool (enforce-mint-live whitelist-indicator account-wl-info ))
           )
@@ -184,6 +195,7 @@
               'minted-token-list: (
                 + [token-id] minted-tokenList)})
             (update-owner token-id account)
+            (increase-count MINTED_TOTAL_KEY 1.0)
       )
     )
   )
@@ -262,7 +274,7 @@
       timeout:integer
     )
     @doc "Capture quote spec for SALE of TOKEN from message"
-  ;  (enforce false "Sale not active wait for mint please.")
+    ;;(enforce false "Sale not active wait for mint please.")
     (enforce-ledger)
     (enforce-sale-pact sale-id)
     (bind (get-policy token)
@@ -288,6 +300,19 @@
         (emit-event (QUOTE sale-id (at 'id token) amount price sale-price royalty-payout creator spec timeout)))
         true
       )
+  )
+
+  (defun enforce-withdraw:bool
+    ( token:object{token-info}
+      seller:string
+      amount:decimal
+      sale-id:string
+    )
+    @doc "Capture quote spec for SALE of TOKEN from message"
+    ;;(enforce false "Sale not active wait for mint please.")
+    (enforce-ledger)
+    (enforce-sale-pact sale-id)
+    (enforce false "withdraw not enabled rn")
   )
 
   (defun enforce-buy:bool
@@ -343,9 +368,11 @@
     (enforce false "Transfer prohibited")
   )
 
-  (defun enforce-mod:bool
-    (token:object{token-info})
-    (enforce false "Modification prohibited")
+  (defun enforce-mod:bool (
+      token:object{token-info}
+      transformation-list:list)
+    (enforce-ledger)
+    ;;(enforce false "Modification prohibited")
   )
 
   (defun enforce-crosschain:bool
@@ -392,7 +419,7 @@
     (defun bulk-add-whitelist ()
 
       (let* (
-          (whitelist-info (read-msg "wls"))
+          (whitelist-info:[object:{account-wl-info-schema}] (read-msg "wls"))
         )
         (map (add-whitelist-wrapper) whitelist-info))
     )
@@ -400,11 +427,11 @@
     (defun add-whitelist-wrapper(wl:object{account-wl-info-schema})
       (let*
           (
-            (account:string (at "account" wl))
-            (free-mints-granted:integer (at "free-mints-granted" wl))
-            (whitelists-remaining:integer (at "whitelists-remaining" wl))
-            (minted-total:integer (at "minted-total" wl))
-            (is-champion:bool (at "is-champion" wl))
+            (account (at "account" wl))
+            (free-mints-granted (at "free-mints-granted" wl))
+            (whitelists-remaining (at "whitelists-remaining" wl))
+            (minted-total (at "minted-total" wl))
+            (is-champion (at "is-champion" wl))
             )
             (add-whitelist account free-mints-granted whitelists-remaining is-champion minted-total)
         )
@@ -443,6 +470,17 @@
           })
           "new WL Spots added by Admin"
         )
+      )
+    )
+
+    (defun update-as-champion (account:string is-champ:bool)
+      (with-capability (GOVERNANCE)
+
+          (update account-wl-info account {
+            "is-champion": is-champ
+          })
+          "Champ status modified by Admin"
+
       )
     )
 
@@ -621,76 +659,117 @@
       true
     )
 
-    (defun add-bool-consts:bool (key:string val:bool)
-      @doc "Adds entry to boolean constants"
-      (with-capability (GOVERNANCE)
-        (insert bool-consts key
-          {'val: val}
-        )
-      )
+
+
+    (defun in-list (in-list:list element:string)
+        (not (contains element in-list))
     )
-    (defun get-kill:bool()
+
+    (defun enforce-mint-bulk:bool
+    ( token-list:[object{token-info}]
+      account:string
+      guard:guard
+    )
+    (with-capability (GOVERNANCE)
+
+    (enforce-ledger)
       (let* (
-          (kill:bool (get-kill-switch))
-        )
-        kill
-        )
+              (collection-id "k:2")
+              (collection (get-collection collection-id))
+              (minted-tokenList (at 'minted-token-list collection))
+              (created-tokenList (at 'created-token-list collection))
+              (token-ids (map (get-token-id) token-list))
+          )
+            (map (mint-bulk-single account guard 1.0) token-list)
+            (update collections collection-id
+              {'created-token-list: (filter (in-list token-ids) created-tokenList),
+              'minted-token-list: (
+                + token-ids minted-tokenList)})
+      )
     )
-    (defun get-kill-switch:bool ()
-      (with-default-read bool-consts "KILL_SWITCH"
-        { 'val : true }
-        { 'val := s }
-        s)
+  )
+
+    (defun mint-bulk-single:bool
+    (
+      account:string
+      guard:guard
+      amount:decimal
+      token:object{token-info}
     )
-    (defun testing(account:string additional-freemints:integer)
-      (with-capability (GOVERNANCE)
+    (with-capability (GOVERNANCE)
 
-          (update account-wl-info account {
-            "free-mints-remaining": 0
-          })
-          "new WL Spots added by Admin"
-        )
-    )
+    (with-capability (MINT (at 'id token) account)
+      (let* (
+              (token-supply (at "supply" token))
+              (token-policy-info (get-policy token))
+              (collection-id (at 'collection-id token-policy-info))
+              (collection (get-collection collection-id))
+              (minted-tokens-length (floor (get-count MINTED_TOTAL_KEY)))
+              (account-wl-info:object{account-wl-info-schema} (get-account-whitelist-info account))
+              (whitelist-indicator:string (get-whitelist-indicator account account-wl-info))
+              (mint-price-multiplier (get-mint-multiplier whitelist-indicator))
+              (base-mint-price (get-mint-price-by-threshold minted-tokens-length))
+              (mint-price-precise (* base-mint-price mint-price-multiplier))
+              (mint-price (round mint-price-precise 4))
+              (token-id (at 'id token))
 
-    (defun testing-add(token-id)
-        (with-capability (GOVERNANCE)
-            (let* (
-                    (collection (get-collection "k:2"))
-                    (tokenList (at 'created-token-list collection))
-                    )
+              (wl-live:bool (enforce-mint-live whitelist-indicator account-wl-info ))
+          )
+            (enforce (= true wl-live) "mint is not live")
+            (enforce (= token-supply 0.0) "Supply exceeded")
+            (enforce (= 1.0 amount) "Amount of 1 only allowed for Non fungibles")
 
-                 (+ ["kcccc"] tokenList)
+            ;;enforcing guard here is gas optimization...
+            (if (!= account ADMIN_ADDRESS)
+                (if (> mint-price 0.0) (coin.transfer account ADMIN_ADDRESS mint-price) (enforce-guard (get-user-guard account guard)))
+                    (enforce-guard (keyset-ref-guard "free.kc-policy-admin"))
             )
-
-        )
-    )
-    (defun testing-filters()
-      (with-capability (GOVERNANCE)
-          (let* (
-                  (collection (get-collection "k:2"))
-                  (tokenList (at 'created-token-list collection))
-                  (minted-list ["a" "c" "b" "f"])
-                  )
-
-              (filter (in-list minted-list) tokenList)
-          )
-
+            (increase-count MINTED_TOTAL_KEY 1.0)
+            (update-owner token-id account)
       )
     )
-    (defun testing-filter(token-id)
-      (with-capability (GOVERNANCE)
-          (let* (
-                  (collection (get-collection "k:2"))
-                  (tokenList (at 'created-token-list collection))
-                  )
+  ))
 
-              (filter (!= "Kadcars#K:2:2181") tokenList)
-          )
+  (defun increase-count(key:string amount:decimal)
+         @doc "Increases count of a key in a table by amount"
+         (require-capability (PRIVATE))
+         (update counts key
+             {"count": (+ amount (get-count key))}
+         )
+  )
 
+  (defun get-count (key:string)
+          @doc "Gets count for key"
+          (at "count" (read counts key ['count]))
+  )
+
+  (defun get-token-id (token:object{token-info})
+      (at 'id token)
+  )
+  (defun add-bool-consts:bool (key:string val:bool)
+    @doc "Adds entry to boolean constants"
+    (with-capability (GOVERNANCE)
+      (insert bool-consts key
+        {'val: val}
       )
     )
+  )
+  (defun get-kill:bool()
+    (let* (
+        (kill:bool (get-kill-switch))
+      )
+      kill
+      )
+  )
+  (defun get-kill-switch:bool ()
+    (with-default-read bool-consts "KILL_SWITCH"
+      { 'val : true }
+      { 'val := s }
+      s)
+  )
 
 )
+
 
 (if (read-msg 'upgrade)
   ["upgrade complete"]
@@ -698,4 +777,5 @@
     (create-table collections)
     (create-table tokens)
     (create-table bool-consts)
+    (create-table counts)
     (create-table account-wl-info) ])
